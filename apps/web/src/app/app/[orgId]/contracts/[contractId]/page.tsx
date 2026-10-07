@@ -8,6 +8,7 @@ import { useState } from "react";
 import { AmendmentsCard } from "@/components/app/amendments";
 import { ChatPanel } from "@/components/app/chat-panel";
 import { ClauseViewer } from "@/components/app/clause-viewer";
+import { ContractOverview } from "@/components/app/contract-overview";
 import { OwnerSelect } from "@/components/app/owner-select";
 import { DateRulesCard, DeadlinesCard, PaymentTermsCard } from "@/components/app/contract-review";
 import { ContractTerms } from "@/components/app/contract-terms";
@@ -22,6 +23,8 @@ import {
 } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
+
+type Section = "dates" | "terms" | "changes";
 
 export default function ContractPage() {
   const { contractId } = useParams<{ contractId: string }>();
@@ -43,6 +46,7 @@ export default function ContractPage() {
           .filter((r) => /^C\d+$/.test(r)),
   );
   const [tab, setTab] = useState<"document" | "chat">("document");
+  const [section, setSection] = useState<Section | null>(null);
   const showRefs = (refs: string[]) => {
     setSelected(refs);
     setTab("document");
@@ -56,23 +60,29 @@ export default function ContractPage() {
   const doc = c.documents.at(-1);
   const busy = doc && (doc.status === "uploaded" || doc.status === "processing");
   const status = CONTRACT_STATUS[c.status];
+  const amendments = c.amendments?.length ?? 0;
+  const sections: [Section, string][] = [
+    ["dates", "All dates"],
+    ["terms", (c.pending_review ?? 0) > 0 ? `Terms (${c.pending_review} to check)` : "Terms"],
+    ["changes", amendments ? `Amendments (${amendments})` : "Amendments"],
+  ];
+  // Open on the terms when they still need entering or checking.
+  const current: Section =
+    section ?? ((c.pending_review ?? 0) > 0 || !c.reviewed_at ? "terms" : "dates");
 
   return (
     <>
-      {workspace.data && (
-        <Link
-          href={`/app/${orgId}/workspaces/${c.workspace_id}`}
-          className="text-muted text-sm hover:underline"
-        >
-          ← {workspace.data.name}
-        </Link>
-      )}
+      <Link href={`/app/${orgId}/contracts`} className="text-muted text-sm hover:underline">
+        ← Contracts
+      </Link>
       <PageHeader
         title={c.title}
-        description={[c.counterparty_name, c.contract_type].filter(Boolean).join(" · ")}
+        description={[c.counterparty_name, c.contract_type, workspace.data?.name]
+          .filter(Boolean)
+          .join(" · ")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status.tone}>{status.label}</Badge>
+            {c.status !== "active" && <Badge tone={status.tone}>{status.label}</Badge>}
             <OwnerSelect orgId={orgId} contract={c} canEdit={canEdit} />
             {canEdit && (
               <>
@@ -87,18 +97,19 @@ export default function ContractPage() {
                   </Button>
                 )}
                 <Button
-                  variant="danger"
+                  variant="ghost"
+                  aria-label="Delete contract"
+                  title="Delete contract"
                   disabled={remove.isPending}
                   onClick={() => {
                     if (window.confirm(`Delete "${c.title}" and its document?`)) {
                       remove.mutate(undefined, {
-                        onSuccess: () =>
-                          router.replace(`/app/${orgId}/workspaces/${c.workspace_id}`),
+                        onSuccess: () => router.replace(`/app/${orgId}/contracts`),
                       });
                     }
                   }}
                 >
-                  <Trash2 className="size-4" /> Delete
+                  <Trash2 className="size-4" />
                 </Button>
               </>
             )}
@@ -124,8 +135,8 @@ export default function ContractPage() {
             {doc.text_source === "needs_ocr"
               ? "This is a scanned document: open the original to read it."
               : "The document is shown on the right for reference."}{" "}
-            Fill in the term and renewal below, add the notice period under &ldquo;Notice periods
-            and key dates&rdquo;, then confirm.
+            Open the &ldquo;Terms&rdquo; tab below to fill in the term, renewal and notice period,
+            then confirm.
           </p>
         </div>
       )}
@@ -141,32 +152,59 @@ export default function ContractPage() {
 
       <div className="grid gap-6 xl:grid-cols-5">
         <div className="space-y-6 xl:col-span-3">
-          {c.summary && (
-            <Card title="Summary">
-              <p className="text-sm">{c.summary}</p>
-              {c.parties.length > 0 && (
-                <ul className="mt-3 flex flex-wrap gap-2 text-sm">
-                  {c.parties.map((p, i) => (
-                    <li key={i} className="border-border rounded-md border px-2 py-1">
-                      <span className="font-medium">{String(p.name)}</span>
-                      <span className="text-muted"> · {String(p.role)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-          )}
-          <DeadlinesCard orgId={orgId} contract={c} canEdit={canEdit} />
-          <ContractTerms
-            key={c.id}
+          <ContractOverview
             orgId={orgId}
             contract={c}
             canEdit={canEdit}
-            onSelectRefs={showRefs}
+            onReview={() => setSection("terms")}
           />
-          <AmendmentsCard orgId={orgId} contract={c} canEdit={canEdit} />
-          <DateRulesCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
-          <PaymentTermsCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
+          <div>
+            <div className="border-border mb-4 flex gap-1 border-b" role="tablist">
+              {sections.map(([key, label]) => (
+                <button
+                  key={key}
+                  role="tab"
+                  aria-selected={current === key}
+                  onClick={() => setSection(key)}
+                  className={cn(
+                    "-mb-px border-b-2 px-3 py-2 text-sm",
+                    current === key
+                      ? "border-primary text-primary font-medium"
+                      : "text-muted hover:text-foreground border-transparent",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {current === "dates" && <DeadlinesCard orgId={orgId} contract={c} canEdit={canEdit} />}
+            {current === "terms" && (
+              <div className="space-y-6">
+                <ContractTerms
+                  key={c.id}
+                  orgId={orgId}
+                  contract={c}
+                  canEdit={canEdit}
+                  onSelectRefs={showRefs}
+                />
+                <DateRulesCard
+                  orgId={orgId}
+                  contract={c}
+                  canEdit={canEdit}
+                  onSelectRefs={showRefs}
+                />
+                <PaymentTermsCard
+                  orgId={orgId}
+                  contract={c}
+                  canEdit={canEdit}
+                  onSelectRefs={showRefs}
+                />
+              </div>
+            )}
+            {current === "changes" && (
+              <AmendmentsCard orgId={orgId} contract={c} canEdit={canEdit} />
+            )}
+          </div>
         </div>
         <div className="xl:col-span-2">
           <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">

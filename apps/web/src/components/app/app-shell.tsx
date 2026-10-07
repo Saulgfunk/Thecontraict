@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  Calculator,
-  CalendarClock,
-  History,
-  LayoutDashboard,
-  LogOut,
-  Settings,
-  Users,
-} from "lucide-react";
+import { Building2, CalendarClock, FileText, Home, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -19,7 +10,6 @@ import { ErrorText, Loading, Select } from "@/components/ui";
 import { useMe } from "@/lib/api";
 import { useAuthState } from "@/lib/auth";
 import { LAST_ORG_KEY } from "@/lib/config";
-import { ORG_KIND_LABELS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
 
 export function AppShell({ orgId, children }: { orgId: string; children: React.ReactNode }) {
@@ -28,7 +18,6 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
   const router = useRouter();
   const pathname = usePathname();
   const current = me.data?.organizations.find((o) => o.organization.id === orgId);
-  const isAdmin = current?.role === "owner" || current?.role === "admin";
 
   useEffect(() => {
     if (!current) return;
@@ -57,12 +46,21 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
 
   const base = `/app/${orgId}`;
   const nav = [
-    { href: base, label: "Dashboard", icon: LayoutDashboard, exact: true },
-    { href: `${base}/deadlines`, label: "Deadlines", icon: CalendarClock },
-    { href: `${base}/tools/deadline-calculator`, label: "Deadline calculator", icon: Calculator },
-    { href: `${base}/members`, label: "Members", icon: Users },
-    { href: `${base}/settings`, label: "Settings", icon: Settings },
-    ...(isAdmin ? [{ href: `${base}/audit`, label: "Audit log", icon: History }] : []),
+    { href: base, label: "Home", icon: Home, match: [] as string[], exact: true },
+    {
+      href: `${base}/contracts`,
+      label: "Contracts",
+      icon: FileText,
+      match: [`${base}/workspaces`],
+    },
+    { href: `${base}/deadlines`, label: "Deadlines", icon: CalendarClock, match: [] },
+    {
+      href: `${base}/settings`,
+      label: "Settings",
+      icon: Settings,
+      // Team, activity log and the calculator live under Settings.
+      match: [`${base}/members`, `${base}/audit`, `${base}/tools`],
+    },
   ];
 
   return (
@@ -75,30 +73,37 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
           <NotificationBell orgId={orgId} />
         </div>
 
-        <div className="space-y-1">
-          <div className="text-muted flex items-center gap-2 px-2 text-xs font-medium tracking-wide uppercase">
-            <Building2 className="size-3.5" /> Organization
+        {me.data.organizations.length > 1 ? (
+          <div className="space-y-1">
+            <div className="text-muted flex items-center gap-2 px-2 text-xs font-medium tracking-wide uppercase">
+              <Building2 className="size-3.5" /> Organization
+            </div>
+            <Select
+              aria-label="Switch organization"
+              value={orgId}
+              onChange={(e) =>
+                router.push(e.target.value === "__new" ? "/app/new" : `/app/${e.target.value}`)
+              }
+            >
+              {me.data.organizations.map((o) => (
+                <option key={o.organization.id} value={o.organization.id}>
+                  {o.organization.name}
+                </option>
+              ))}
+              <option value="__new">+ New organization…</option>
+            </Select>
           </div>
-          <Select
-            aria-label="Switch organization"
-            value={orgId}
-            onChange={(e) =>
-              router.push(e.target.value === "__new" ? "/app/new" : `/app/${e.target.value}`)
-            }
-          >
-            {me.data.organizations.map((o) => (
-              <option key={o.organization.id} value={o.organization.id}>
-                {o.organization.name}
-              </option>
-            ))}
-            <option value="__new">+ New organization…</option>
-          </Select>
-          <p className="text-muted px-2 text-xs">{ORG_KIND_LABELS[current.organization.kind]}</p>
-        </div>
+        ) : (
+          <p className="flex items-center gap-2 px-2 text-sm font-medium">
+            <Building2 className="text-muted size-4" /> {current.organization.name}
+          </p>
+        )}
 
         <nav className="flex flex-row flex-wrap gap-1 md:flex-col">
-          {nav.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
+          {nav.map(({ href, label, icon: Icon, exact, match }) => {
+            const active = exact
+              ? pathname === href
+              : [href, ...match].some((p) => pathname.startsWith(p));
             return (
               <Link
                 key={href}

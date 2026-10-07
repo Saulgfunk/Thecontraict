@@ -133,3 +133,16 @@ export function SourceRefs({
     </div>
   );
 }
+
+export function formatMoney(amount: string | number | null | undefined, currency: string | null) {
+  if (amount == null) return null;
+  const value = Number(amount);
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: currency ? "currency" : "decimal",
+      currency: currency ?? undefined,
+    }).format(value);
+  } catch {
+    return `${value} ${currency ?? ""}`.trim();
+  }
+}

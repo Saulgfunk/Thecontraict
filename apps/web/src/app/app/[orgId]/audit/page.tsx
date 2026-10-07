@@ -1,7 +1,8 @@
 "use client";
 
+import { SettingsHeader } from "@/components/app/settings-tabs";
 import { useCurrentOrg } from "@/components/app/use-org";
-import { Card, ErrorText, Loading, PageHeader } from "@/components/ui";
+import { Card, ErrorText, Loading } from "@/components/ui";
 import { useAuditEvents, useOrgMembers } from "@/lib/api";
 import { errorMessage, formatDateTime } from "@/lib/utils";
 
@@ -22,10 +23,7 @@ export default function AuditPage() {
 
   return (
     <>
-      <PageHeader
-        title="Audit log"
-        description="Who did what, and when. Entries cannot be edited."
-      />
+      <SettingsHeader description="Who did what, and when. Entries cannot be edited." />
       <Card>
         {events.isPending ? (
           <Loading />

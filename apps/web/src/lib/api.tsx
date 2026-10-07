@@ -250,6 +250,25 @@ type ContractDetail = Schemas["ContractDetail"];
 const isProcessing = (c: { documents: { status: string }[] }) =>
   c.documents.some((d) => d.status === "uploaded" || d.status === "processing");
 
+/** Contracts across every workspace the user can access (optionally one workspace). */
+export function useAllContracts(orgId: string, workspaceId?: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "contracts", workspaceId ?? "all"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/contracts", {
+          params: {
+            path: { org_id: orgId },
+            query: workspaceId ? { workspace_id: workspaceId } : {},
+          },
+        }),
+      ),
+    refetchInterval: (q) =>
+      (q.state.data as ContractSummary[] | undefined)?.some(isProcessing) ? 2500 : false,
+  });
+}
+
 export function useContracts(orgId: string, workspaceId: string) {
   const api = useApi();
   return useQuery({

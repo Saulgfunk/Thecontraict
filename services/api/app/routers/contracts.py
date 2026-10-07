@@ -26,6 +26,7 @@ from app.contract_schemas import (
     ClauseOut,
     ContractCreate,
     ContractDetail,
+    ContractListItem,
     ContractSummary,
     ContractUpdate,
     DateRuleIn,
@@ -45,6 +46,7 @@ from app.models import (
     ContractStatus,
     DateRule,
     Deadline,
+    DeadlineKind,
     DeadlineStatus,
     Document,
     DocumentStatus,
@@ -97,11 +99,16 @@ def _pending_review(contract: Contract) -> int:
 
 
 def _next_deadline(contract: Contract) -> Deadline | None:
+    """The next date that needs a decision (notice, renewal, option...). Recurring payments
+    would otherwise always come first, so they are only shown when nothing else is due."""
     today = date.today()
-    upcoming = [
-        d for d in contract.deadlines if d.status == DeadlineStatus.OPEN and d.due_date >= today
-    ]
-    return min(upcoming, key=lambda d: d.due_date, default=None)
+    upcoming = sorted(
+        (d for d in contract.deadlines if d.status == DeadlineStatus.OPEN and d.due_date >= today),
+        key=lambda d: d.due_date,
+    )
+    return next((d for d in upcoming if d.kind != DeadlineKind.PAYMENT), None) or next(
+        iter(upcoming), None
+    )
 
 
 def _main_documents(contract: Contract) -> list[Document]:
@@ -369,6 +376,40 @@ def list_contracts(
         .order_by(Contract.created_at.desc())
     )
     return [_summary(c) for c in contracts]
+
+
+@router.get("/contracts", response_model=list[ContractListItem])
+def list_all_contracts(
+    ctx: OrgContext = Depends(get_org_context), workspace_id: uuid.UUID | None = None
+) -> list[ContractListItem]:
+    """Contracts across every workspace the user can access."""
+    query = (
+        select(Contract, Workspace)
+        .join(Workspace, Workspace.id == Contract.workspace_id)
+        .where(Contract.organization_id == ctx.org_id)
+        .options(
+            selectinload(Contract.documents),
+            selectinload(Contract.deadlines),
+            selectinload(Contract.date_rules),
+            selectinload(Contract.payment_terms),
+        )
+        .order_by(Contract.created_at.desc())
+    )
+    if workspace_id:
+        ctx.get_workspace(workspace_id)
+        query = query.where(Contract.workspace_id == workspace_id)
+    elif not ctx.is_org_admin:
+        query = query.where(
+            Contract.workspace_id.in_(
+                select(WorkspaceMembership.workspace_id).where(
+                    WorkspaceMembership.user_id == ctx.user.id
+                )
+            )
+        )
+    return [
+        ContractListItem(**_summary(c).model_dump(), workspace_name=w.name)
+        for c, w in ctx.db.execute(query)
+    ]
 
 
 @router.get("/contracts/{contract_id}", response_model=ContractDetail)

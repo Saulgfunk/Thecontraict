@@ -91,8 +91,8 @@ export default function WorkspacePage() {
 
   return (
     <>
-      <Link href={`/app/${orgId}`} className="text-muted text-sm hover:underline">
-        ← Dashboard
+      <Link href={`/app/${orgId}/contracts`} className="text-muted text-sm hover:underline">
+        ← Contracts
       </Link>
       <PageHeader
         title={ws.name}

@@ -10,6 +10,7 @@ import {
   SourceRefs,
   describeRule,
   formatIsoDate,
+  formatMoney,
 } from "@/components/app/contract-bits";
 import { NoticeDraftDialog } from "@/components/app/notice-draft-dialog";
 import { Badge, Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
@@ -216,7 +217,7 @@ export function DeadlinesCard({
   return (
     <Card
       title="Deadlines"
-      description="Calculated from the terms and rules below. Record what you decide for each."
+      description="Every date worked out from the terms. Record what you decide for each."
       actions={
         aiEnabled && canEdit && contract.documents.length ? (
           <Button variant="secondary" onClick={() => setDrafting(null)}>
@@ -542,19 +543,6 @@ export function DateRulesCard({
 // ---------------------------------------------------------------------------
 // Payment terms
 // ---------------------------------------------------------------------------
-
-function formatMoney(amount: string | number | null | undefined, currency: string | null) {
-  if (amount == null) return null;
-  const value = Number(amount);
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: currency ? "currency" : "decimal",
-      currency: currency ?? undefined,
-    }).format(value);
-  } catch {
-    return `${value} ${currency ?? ""}`.trim();
-  }
-}
 
 function PaymentForm({
   orgId,

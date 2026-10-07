@@ -183,6 +183,10 @@ class ContractSummary(ORMModel):
     pending_review: int = 0
 
 
+class ContractListItem(ContractSummary):
+    workspace_name: str
+
+
 class ContractDetail(ContractSummary):
     summary: str | None
     parties: list[dict[str, Any]]

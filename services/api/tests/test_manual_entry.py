@@ -139,3 +139,38 @@ def test_ai_never_overwrites_manual_terms(client_as: Client, fake: FakeExtractor
     # The confirmed notice rule isn't duplicated by the AI's suggestion of the same rule.
     assert [r["review_status"] for r in detail["date_rules"]] == ["confirmed"]
     assert detail["status"] == "active"
+
+
+def test_list_contracts_across_workspaces(client_as: Client) -> None:
+    org_id, ws_a = setup(client_as)
+    alice = client_as(ALICE)
+    ws_b = create_workspace(client_as, org_id, "Client B Ltd")
+    for ws, title in ((ws_a, "A contract"), (ws_b, "B contract")):
+        alice.post(
+            f"/organizations/{org_id}/workspaces/{ws}/contracts/manual",
+            json={**MANUAL, "title": title},
+        )
+    everything = alice.get(f"/organizations/{org_id}/contracts").json()
+    assert {(c["title"], c["workspace_name"]) for c in everything} == {
+        ("A contract", "Client A Ltd"),
+        ("B contract", "Client B Ltd"),
+    }
+    assert all(c["next_deadline"] for c in everything)
+    # Payments come first by date, but the next date to decide on is shown.
+    assert all(c["next_deadline"]["kind"] != "payment" for c in everything)
+    only_b = alice.get(f"/organizations/{org_id}/contracts", params={"workspace_id": ws_b})
+    assert [c["title"] for c in only_b.json()] == ["B contract"]
+
+    # A member only sees the workspaces they belong to.
+    alice.post(f"/organizations/{org_id}/members", json={"email": BOB})
+    alice.post(
+        f"/organizations/{org_id}/workspaces/{ws_a}/members", json={"email": BOB, "role": "viewer"}
+    )
+    bob = client_as(BOB)
+    assert [c["title"] for c in bob.get(f"/organizations/{org_id}/contracts").json()] == [
+        "A contract"
+    ]
+    assert (
+        bob.get(f"/organizations/{org_id}/contracts", params={"workspace_id": ws_b}).status_code
+        == 404
+    )

@@ -101,3 +101,10 @@ export const NOTICE_KIND_LABELS: Record<Schemas["NoticeKind"], string> = {
   renegotiation: "Renegotiation letter",
   option_exercise: "Option exercise notice",
 };
+
+/** What workspaces are called in the UI, by kind of organization. */
+export const WORKSPACE_NOUN: Record<Schemas["OrganizationKind"], { one: string; many: string }> = {
+  law_firm: { one: "client", many: "clients" },
+  holding: { one: "company", many: "companies" },
+  company: { one: "department", many: "departments" },
+};

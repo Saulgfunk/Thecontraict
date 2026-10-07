@@ -4,9 +4,9 @@ import { FileText, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { Countdown, formatIsoDate } from "@/components/app/contract-bits";
+import { DueText, deadlineSentence } from "@/components/app/deadline-actions";
 import { Badge, ErrorText, Loading } from "@/components/ui";
-import { useAiEnabled, useContracts, useUploadContract } from "@/lib/api";
+import { useAiEnabled, useAllContracts, useUploadContract } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -91,63 +91,80 @@ export function ContractsPanel({
   orgId,
   workspaceId,
   canEdit,
+  search = "",
 }: {
   orgId: string;
-  workspaceId: string;
+  /** Omit to list contracts from every workspace the user can access. */
+  workspaceId?: string;
   canEdit: boolean;
+  search?: string;
 }) {
-  const contracts = useContracts(orgId, workspaceId);
+  const contracts = useAllContracts(orgId, workspaceId);
+  const needle = search.trim().toLowerCase();
+  const list = contracts.data?.filter(
+    (c) =>
+      !needle ||
+      [c.title, c.counterparty_name, c.contract_type, c.workspace_name].some((v) =>
+        v?.toLowerCase().includes(needle),
+      ),
+  );
 
   return (
     <>
-      {canEdit && <Uploader orgId={orgId} workspaceId={workspaceId} />}
+      {canEdit && workspaceId && <Uploader orgId={orgId} workspaceId={workspaceId} />}
       {contracts.isPending ? (
         <Loading />
       ) : contracts.error ? (
         <ErrorText>{errorMessage(contracts.error)}</ErrorText>
-      ) : contracts.data.length === 0 ? (
-        <p className="text-muted text-sm">No contracts yet.</p>
+      ) : !list?.length ? (
+        <p className="text-muted text-sm">
+          {needle ? "No contracts match your search." : "No contracts yet."}
+        </p>
       ) : (
         <ul className="divide-border divide-y">
-          {contracts.data.map((c) => {
+          {list.map((c) => {
             const doc = c.documents.at(-1);
             const busy = doc && (doc.status === "uploaded" || doc.status === "processing");
             const status = CONTRACT_STATUS[c.status];
+            const next = c.next_deadline;
             return (
               <li key={c.id}>
                 <Link
                   href={`/app/${orgId}/contracts/${c.id}`}
-                  className="hover:text-primary flex flex-wrap items-center justify-between gap-3 py-3"
+                  className="group flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
-                  <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
                     <FileText className="text-muted size-4 shrink-0" />
                     <span className="min-w-0">
-                      <span className="block truncate font-medium">{c.title}</span>
+                      <span className="group-hover:text-primary block font-medium">{c.title}</span>
                       <span className="text-muted block truncate text-xs">
-                        {[c.counterparty_name, c.contract_type, doc?.filename]
+                        {[c.counterparty_name, workspaceId ? null : c.workspace_name]
                           .filter(Boolean)
                           .join(" · ")}
                       </span>
                     </span>
                   </span>
-                  <span className="flex flex-wrap items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-7 sm:w-80 sm:shrink-0 sm:justify-end sm:pl-0 sm:text-right">
                     {busy ? (
-                      <Badge tone="primary">Analysing…</Badge>
+                      <Badge tone="primary">Reading the document…</Badge>
                     ) : doc?.status === "failed" ? (
-                      <Badge tone="danger">Analysis failed</Badge>
-                    ) : (
-                      <>
-                        {(c.pending_review ?? 0) > 0 && (
-                          <Badge tone="warning">{c.pending_review} to review</Badge>
-                        )}
-                        <Badge tone={status.tone}>{status.label}</Badge>
-                      </>
-                    )}
-                    {c.next_deadline && (
-                      <span className="text-muted flex items-center gap-2 text-xs">
-                        {c.next_deadline.label}: {formatIsoDate(c.next_deadline.due_date)}
-                        <Countdown date={c.next_deadline.due_date} />
+                      <Badge tone="danger">Could not read the document</Badge>
+                    ) : (c.pending_review ?? 0) > 0 ? (
+                      <Badge tone="warning">
+                        Check {c.pending_review} item{c.pending_review === 1 ? "" : "s"}
+                      </Badge>
+                    ) : c.status !== "active" ? (
+                      <Badge tone={status.tone}>{status.label}</Badge>
+                    ) : null}
+                    {next ? (
+                      <span className="text-xs">
+                        <span className="block">
+                          {deadlineSentence({ ...next, counterparty_name: c.counterparty_name })}
+                        </span>
+                        <DueText date={next.due_date} className="text-xs" />
                       </span>
+                    ) : (
+                      !busy && <span className="text-muted text-xs">No upcoming dates</span>
                     )}
                   </span>
                 </Link>

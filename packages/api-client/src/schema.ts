@@ -243,6 +243,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All Contracts
+         * @description Contracts across every workspace the user can access.
+         */
+        get: operations["list_all_contracts_organizations__org_id__contracts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/contracts/{contract_id}": {
         parameters: {
             query?: never;
@@ -1196,6 +1216,54 @@ export interface components {
              * @default []
              */
             amendments?: components["schemas"]["AmendmentOut"][];
+        };
+        /** ContractListItem */
+        ContractListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["ContractStatus"];
+            /** Contract Type */
+            contract_type: string | null;
+            /** Counterparty Name */
+            counterparty_name: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Auto Renews */
+            auto_renews: boolean | null;
+            /** Owner Id */
+            owner_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Documents */
+            documents: components["schemas"]["DocumentOut"][];
+            next_deadline?: components["schemas"]["DeadlineOut"] | null;
+            /**
+             * Pending Review
+             * @default 0
+             */
+            pending_review?: number;
+            /** Workspace Name */
+            workspace_name: string;
         };
         /**
          * ContractStatus
@@ -2834,6 +2902,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_all_contracts_organizations__org_id__contracts_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractListItem"][];
                 };
             };
             /** @description Validation Error */

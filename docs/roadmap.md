@@ -24,6 +24,14 @@
   Word download; Excel exports of contracts and deadlines.
 - Done: amendments (recorded changes to terms with before/after history, applied to the
   current terms, reversible; amendment documents kept alongside).
+- Done: simpler UI after a competitor review (ContractSafe, Juro, Concord, Zefort): home
+  page of what needs attention in plain sentences with one-click decisions and undo; one
+  Contracts list across workspaces with search; contract page led by an "At a glance"
+  summary with details in tabs; a short new-contract form with "More options"; four menu
+  items (Home, Contracts, Deadlines, Settings).
+- Next for simplicity: a sample contract to explore; reminders to people without a login;
+  auto-creating the first workspace for single companies; finding contracts with no
+  reminders or no signed copy.
 - Next for amendments: AI reading of amendment documents to propose the changes;
   side letters and SOWs as linked documents.
 - Obligations tracking, risk flags.

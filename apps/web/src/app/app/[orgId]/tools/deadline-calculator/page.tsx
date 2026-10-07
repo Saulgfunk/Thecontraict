@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 
+import { SettingsHeader } from "@/components/app/settings-tabs";
 import { useCurrentOrg } from "@/components/app/use-org";
-import { Badge, Button, Card, ErrorText, Field, Input, PageHeader, Select } from "@/components/ui";
+import { Badge, Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
 import { useNoticePreview, type Schemas } from "@/lib/api";
 import { errorMessage, formatDate } from "@/lib/utils";
 
@@ -108,10 +109,7 @@ export default function DeadlineCalculatorPage() {
 
   return (
     <>
-      <PageHeader
-        title="Deadline calculator"
-        description="Work out the last day to send a notice of non-renewal. The same engine will calculate deadlines from your uploaded contracts."
-      />
+      <SettingsHeader description="Work out the last day to send a notice of non-renewal, without saving a contract." />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Contract terms">
           <form

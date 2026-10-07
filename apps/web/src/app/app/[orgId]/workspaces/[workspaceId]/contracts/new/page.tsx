@@ -102,7 +102,8 @@ export default function NewContractPage() {
     end_date: "",
     notice_type: "non_renewal_notice" as Schemas["DateRuleType"],
     notice_amount: "90",
-    notice_unit: "days_calendar",
+    notice_unit: "days" as "days" | "weeks" | "months",
+    notice_business: false,
     notice_delivery: "",
     governing_law: "",
     holiday_country: "",
@@ -113,10 +114,13 @@ export default function NewContractPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const set = (key: keyof typeof f, value: string) => setF((s) => ({ ...s, [key]: value }));
+  const set = (key: keyof typeof f, value: string | boolean) =>
+    setF((s) => ({ ...s, [key]: value }));
+  const [showPayments, setShowPayments] = useState(false);
 
   const country = f.holiday_country || workspace.data?.country || org?.default_country || "";
-  const [noticeUnit, noticeBasis] = f.notice_unit.split("_") as [Unit, string | undefined];
+  const noticeUnit: Unit = f.notice_unit;
+  const noticeBasis = f.notice_unit === "days" && f.notice_business ? "business" : "calendar";
   const hasTerm = !!f.effective_date && !!f.initial_term_amount;
   const hasNotice = !!f.notice_amount;
 
@@ -221,11 +225,11 @@ export default function NewContractPage() {
         href={`/app/${orgId}/workspaces/${workspaceId}`}
         className="text-muted text-sm hover:underline"
       >
-        ← {workspace.data?.name ?? "Workspace"}
+        ← {workspace.data?.name ?? "Back"}
       </Link>
       <PageHeader
-        title="New contract"
-        description="Enter the key terms. Deadlines and reminders are calculated from them; you can attach the signed document now or later."
+        title="Add a contract"
+        description="Only the name is required. Fill in what you know; you can add the rest later."
       />
       <form
         className="grid gap-6 xl:grid-cols-3"
@@ -235,9 +239,9 @@ export default function NewContractPage() {
         }}
       >
         <div className="space-y-6 xl:col-span-2">
-          <Card title="The contract">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title" className="sm:col-span-2">
+          <Card>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Contract name" className="sm:col-span-2">
                 <Input
                   required
                   autoFocus
@@ -246,24 +250,14 @@ export default function NewContractPage() {
                   onChange={(e) => set("title", e.target.value)}
                 />
               </Field>
-              <Field label="Other party">
+              <Field label="Who is it with?" className="sm:col-span-2">
                 <Input
                   value={f.counterparty_name}
+                  placeholder="e.g. Sparkle Services Ltd"
                   onChange={(e) => set("counterparty_name", e.target.value)}
                 />
               </Field>
-              <Field label="Type" hint="e.g. Services, Lease, SaaS, NDA">
-                <Input
-                  value={f.contract_type}
-                  onChange={(e) => set("contract_type", e.target.value)}
-                />
-              </Field>
-            </div>
-          </Card>
-
-          <Card title="Term and renewal">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Start date">
+              <Field label="When did it start?">
                 <Input
                   type="date"
                   value={f.effective_date}
@@ -271,111 +265,102 @@ export default function NewContractPage() {
                 />
               </Field>
               <PeriodField
-                label="Initial term"
+                label="How long is the first term?"
                 amount={f.initial_term_amount}
                 unit={f.initial_term_unit}
                 onAmount={(v) => set("initial_term_amount", v)}
                 onUnit={(v) => set("initial_term_unit", v)}
               />
-              <Field label="Renews automatically?">
-                <Select value={f.auto_renews} onChange={(e) => set("auto_renews", e.target.value)}>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="">Not sure</option>
-                </Select>
+              <Field label="Does it renew automatically?">
+                <div className="flex gap-2" role="radiogroup">
+                  {(
+                    [
+                      ["yes", "Yes"],
+                      ["no", "No"],
+                      ["", "Not sure"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      role="radio"
+                      aria-checked={f.auto_renews === value}
+                      onClick={() => set("auto_renews", value)}
+                      className={
+                        f.auto_renews === value
+                          ? "border-primary bg-primary/10 text-primary h-9 flex-1 rounded-md border px-3 text-sm font-medium"
+                          : "border-border hover:bg-background h-9 flex-1 rounded-md border px-3 text-sm"
+                      }
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </Field>
-              <PeriodField
-                label="Each renewal lasts"
-                amount={f.renewal_term_amount}
-                unit={f.renewal_term_unit}
-                disabled={f.auto_renews !== "yes"}
-                onAmount={(v) => set("renewal_term_amount", v)}
-                onUnit={(v) => set("renewal_term_unit", v)}
-              />
-              <Field
-                label="Fixed end date (optional)"
-                hint="Only if the contract states one instead of a term length"
-              >
-                <Input
-                  type="date"
-                  value={f.end_date}
-                  onChange={(e) => set("end_date", e.target.value)}
+              {f.auto_renews === "yes" ? (
+                <PeriodField
+                  label="For how long each time?"
+                  amount={f.renewal_term_amount}
+                  unit={f.renewal_term_unit}
+                  onAmount={(v) => set("renewal_term_amount", v)}
+                  onUnit={(v) => set("renewal_term_unit", v)}
                 />
-              </Field>
-            </div>
-          </Card>
-
-          <Card
-            title="Notice period"
-            description="How long before the end of the term notice must be given. Leave the number empty if there is none."
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Kind of notice">
-                <Select value={f.notice_type} onChange={(e) => set("notice_type", e.target.value)}>
-                  <option value="non_renewal_notice">{RULE_TYPE_LABELS.non_renewal_notice}</option>
-                  <option value="termination_notice">{RULE_TYPE_LABELS.termination_notice}</option>
-                  <option value="option_exercise">{RULE_TYPE_LABELS.option_exercise}</option>
-                </Select>
-              </Field>
-              <Field label="At least">
+              ) : (
+                <div className="hidden sm:block" />
+              )}
+              <Field
+                label={
+                  f.auto_renews === "yes"
+                    ? "How much notice to stop it renewing?"
+                    : "How much notice to end it?"
+                }
+                hint="Leave empty if there is no notice period"
+              >
                 <div className="flex gap-2">
                   <Input
                     type="number"
                     min={0}
                     className="w-20 shrink-0"
+                    aria-label="Notice period"
                     value={f.notice_amount}
                     onChange={(e) => set("notice_amount", e.target.value)}
                   />
                   <Select
+                    aria-label="Notice period unit"
                     value={f.notice_unit}
                     onChange={(e) => set("notice_unit", e.target.value)}
                   >
-                    <option value="days_calendar">calendar days</option>
-                    <option value="days_business">business days</option>
+                    <option value="days">days</option>
                     <option value="weeks">weeks</option>
                     <option value="months">months</option>
                   </Select>
                 </div>
               </Field>
-              <Field
-                label="Notice counts as received after (optional)"
-                hint="Business days, e.g. 2 if posted notices are deemed received 2 business days later"
-              >
+              <Field label="Signed copy (optional)" hint="PDF or Word. You can also add it later.">
                 <Input
-                  type="number"
-                  min={0}
-                  value={f.notice_delivery}
-                  onChange={(e) => set("notice_delivery", e.target.value)}
-                />
-              </Field>
-              <Field
-                label="How notice must be given (optional)"
-                hint="e.g. registered post to the registered office"
-              >
-                <Input
-                  value={f.notice_details}
-                  onChange={(e) => set("notice_details", e.target.value)}
+                  type="file"
+                  accept=".pdf,.docx"
+                  className="h-auto py-1.5"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 />
               </Field>
             </div>
           </Card>
 
-          <Card
-            title="Payments (optional)"
-            description="Used for invoice and payment reminders."
-            actions={
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setPayments((rows) => [...rows, emptyPayment()])}
-              >
-                <Plus className="size-4" /> Add payment
-              </Button>
-            }
-          >
-            {payments.length === 0 ? (
-              <p className="text-muted text-sm">No payments added.</p>
-            ) : (
+          {showPayments || payments.length > 0 ? (
+            <Card
+              title="Payment reminders"
+              description="We'll remind you before each payment or invoice is due."
+              actions={
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setPayments((rows) => [...rows, emptyPayment()])}
+                >
+                  <Plus className="size-4" /> Add another
+                </Button>
+              }
+            >
               <div className="space-y-4">
                 {payments.map((row, i) => {
                   const update = (patch: Partial<PaymentRow>) =>
@@ -385,7 +370,7 @@ export default function NewContractPage() {
                       key={i}
                       className="border-border grid gap-3 rounded-md border p-3 sm:grid-cols-6"
                     >
-                      <Field label="Description" className="sm:col-span-3">
+                      <Field label="What for" className="sm:col-span-3">
                         <Input
                           required
                           value={row.description}
@@ -406,7 +391,11 @@ export default function NewContractPage() {
                           type="button"
                           variant="ghost"
                           aria-label="Remove payment"
-                          onClick={() => setPayments((rows) => rows.filter((_, j) => j !== i))}
+                          onClick={() => {
+                            const rest = payments.filter((_, j) => j !== i);
+                            setPayments(rest);
+                            if (rest.length === 0) setShowPayments(false);
+                          }}
                         >
                           <Trash2 className="size-4" />
                         </Button>
@@ -447,25 +436,100 @@ export default function NewContractPage() {
                   );
                 })}
               </div>
-            )}
-          </Card>
+            </Card>
+          ) : (
+            <button
+              type="button"
+              className="text-primary flex items-center gap-1 text-sm font-medium hover:underline"
+              onClick={() => {
+                setShowPayments(true);
+                setPayments([emptyPayment()]);
+              }}
+            >
+              <Plus className="size-4" /> Add a payment reminder
+            </button>
+          )}
 
-          <Card title="Other details (optional)">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Governing law">
+          <details className="border-border bg-surface group rounded-lg border">
+            <summary className="cursor-pointer px-5 py-4 text-sm font-medium select-none">
+              More options{" "}
+              <span className="text-muted font-normal">
+                — type, fixed end date, business days, governing law, value
+              </span>
+            </summary>
+            <div className="border-border grid gap-4 border-t p-5 sm:grid-cols-2">
+              <Field label="Type of contract" hint="e.g. Services, Lease, SaaS, NDA">
                 <Input
-                  value={f.governing_law}
-                  onChange={(e) => set("governing_law", e.target.value)}
+                  value={f.contract_type}
+                  onChange={(e) => set("contract_type", e.target.value)}
                 />
               </Field>
               <Field
-                label="Holiday calendar"
-                hint={`Country code for business days${country && !f.holiday_country ? ` (using ${country})` : ""}`}
+                label="Fixed end date"
+                hint="Only if the contract gives an end date instead of a length"
+              >
+                <Input
+                  type="date"
+                  value={f.end_date}
+                  onChange={(e) => set("end_date", e.target.value)}
+                />
+              </Field>
+              <Field label="Kind of notice">
+                <Select value={f.notice_type} onChange={(e) => set("notice_type", e.target.value)}>
+                  <option value="non_renewal_notice">{RULE_TYPE_LABELS.non_renewal_notice}</option>
+                  <option value="termination_notice">{RULE_TYPE_LABELS.termination_notice}</option>
+                  <option value="option_exercise">{RULE_TYPE_LABELS.option_exercise}</option>
+                </Select>
+              </Field>
+              <Field
+                label="How notice must be given"
+                hint="e.g. registered post to the registered office"
+              >
+                <Input
+                  value={f.notice_details}
+                  onChange={(e) => set("notice_details", e.target.value)}
+                />
+              </Field>
+              <label className="flex items-start gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-[var(--primary)]"
+                  checked={f.notice_business}
+                  disabled={f.notice_unit !== "days"}
+                  onChange={(e) => set("notice_business", e.target.checked)}
+                />
+                <span>
+                  The notice period counts business days only
+                  <span className="text-muted block text-xs">
+                    Weekends and public holidays are skipped. Only for periods in days.
+                  </span>
+                </span>
+              </label>
+              <Field
+                label="Notice counts as received after"
+                hint="Business days, e.g. 2 if posted notices are deemed received 2 business days later"
+              >
+                <Input
+                  type="number"
+                  min={0}
+                  value={f.notice_delivery}
+                  onChange={(e) => set("notice_delivery", e.target.value)}
+                />
+              </Field>
+              <Field
+                label="Public holidays of"
+                hint={`Two-letter country code${country && !f.holiday_country ? ` (using ${country})` : ""}`}
               >
                 <Input
                   maxLength={2}
                   value={f.holiday_country}
                   onChange={(e) => set("holiday_country", e.target.value.toUpperCase())}
+                />
+              </Field>
+              <Field label="Governing law">
+                <Input
+                  value={f.governing_law}
+                  onChange={(e) => set("governing_law", e.target.value)}
                 />
               </Field>
               <Field label="Currency" hint="e.g. EUR, GBP, USD, TRY">
@@ -483,28 +547,16 @@ export default function NewContractPage() {
                   onChange={(e) => set("contract_value", e.target.value)}
                 />
               </Field>
-              <Field
-                label="Signed document"
-                hint="PDF or Word; you can also attach it later"
-                className="sm:col-span-2"
-              >
-                <Input
-                  type="file"
-                  accept=".pdf,.docx"
-                  className="h-auto py-1.5"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-              </Field>
             </div>
-          </Card>
+          </details>
         </div>
 
         <div className="xl:col-span-1">
           <div className="space-y-4 xl:sticky xl:top-6">
-            <Card title="Notice deadline">
+            <Card title="Your deadline">
               {!hasTerm || !hasNotice ? (
                 <p className="text-muted text-sm">
-                  Enter the start date, term and notice period to see the deadline.
+                  Enter the start date, length and notice period to see the last day to give notice.
                 </p>
               ) : f.notice_type !== "non_renewal_notice" ? (
                 <p className="text-muted text-sm">Calculated once the contract is saved.</p>
@@ -512,15 +564,25 @@ export default function NewContractPage() {
                 <ErrorText>{errorMessage(preview.error)}</ErrorText>
               ) : p ? (
                 <div className="space-y-2">
+                  <p className="text-muted text-sm">
+                    Last day to tell {f.counterparty_name.trim() || "the other party"} you
+                    don&rsquo;t want to renew:
+                  </p>
                   <p className="text-2xl font-semibold">{formatIsoDate(p.notice_deadline)}</p>
                   <p className="text-muted text-sm">
-                    {countdownText(daysUntil(p.notice_deadline))}
+                    {countdownText(daysUntil(p.notice_deadline))}. We&rsquo;ll remind you well
+                    before.
                   </p>
-                  <ol className="bg-background text-muted space-y-0.5 rounded-md p-2 font-mono text-xs">
-                    {p.derivation.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ol>
+                  <details className="text-muted text-xs">
+                    <summary className="cursor-pointer select-none">
+                      How was this calculated?
+                    </summary>
+                    <ol className="bg-background mt-1 space-y-0.5 rounded-md p-2 font-mono">
+                      {p.derivation.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ol>
+                  </details>
                 </div>
               ) : (
                 <p className="text-muted text-sm">Calculating…</p>

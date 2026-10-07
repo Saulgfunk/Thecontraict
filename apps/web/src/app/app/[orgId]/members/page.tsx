@@ -3,18 +3,9 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { SettingsHeader } from "@/components/app/settings-tabs";
 import { useCurrentOrg } from "@/components/app/use-org";
-import {
-  Badge,
-  Button,
-  Card,
-  ErrorText,
-  Field,
-  Input,
-  Loading,
-  PageHeader,
-  Select,
-} from "@/components/ui";
+import { Badge, Button, Card, ErrorText, Field, Input, Loading, Select } from "@/components/ui";
 import {
   useAddOrgMember,
   useOrgMembers,
@@ -39,10 +30,7 @@ export default function MembersPage() {
 
   return (
     <>
-      <PageHeader
-        title="Members"
-        description="People in this organization. Members only see the workspaces they are added to."
-      />
+      <SettingsHeader description="People in this organization. Members only see the workspaces they are added to." />
       <div className="space-y-6">
         {isAdmin && (
           <Card

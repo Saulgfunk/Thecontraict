@@ -3,8 +3,9 @@
 import { CalendarPlus, Copy } from "lucide-react";
 import { useState } from "react";
 
+import { SettingsHeader } from "@/components/app/settings-tabs";
 import { useCurrentOrg } from "@/components/app/use-org";
-import { Button, Card, ErrorText, Field, Input, Loading, PageHeader } from "@/components/ui";
+import { Button, Card, ErrorText, Field, Input, Loading } from "@/components/ui";
 import {
   useCalendarFeed,
   useCreateCalendarFeed,
@@ -233,7 +234,7 @@ export default function SettingsPage() {
   const { orgId, isAdmin } = useCurrentOrg();
   return (
     <>
-      <PageHeader title="Settings" description="Notifications, calendar and reminders." />
+      <SettingsHeader description="Who gets reminded, how far ahead, and your calendar link." />
       <div className="grid gap-6 lg:grid-cols-2">
         <MyNotifications orgId={orgId} />
         <CalendarFeedCard orgId={orgId} />
