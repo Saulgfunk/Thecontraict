@@ -81,3 +81,10 @@ User *─* Workspace (WorkspaceMembership)
 | **Amendment**             | contract_id, title, effective_date, signed_date, description                                                                             | Its changes are applied to the contract, which always shows the terms in force                   |
 | **AmendmentChange**       | amendment_id, target_type (`contract` / `date_rule` / `payment_term`), target_id, field (`_created` for additions), old_value, new_value | Used for the before → after history and to revert; a value changed again since is never reverted |
 | **Document.amendment_id** | —                                                                                                                                        | Amendment documents are stored with the contract but not treated as its main document            |
+
+## Reminder recipients
+
+| Field                        | Notes                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Contract.reminder_emails** | Up to 10 addresses of people without an account (e.g. finance, outside counsel) who get the same reminder emails as the owner, without app links |
+| **ReminderLog.email**        | A log row is for either a user or an email address (check constraint); unique per recipient and reminder point, so each is sent once             |

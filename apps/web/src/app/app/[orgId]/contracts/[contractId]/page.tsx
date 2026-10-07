@@ -119,6 +119,29 @@ export default function ContractPage() {
       />
       <ErrorText>{errorMessage(reprocess.error || remove.error)}</ErrorText>
 
+      {c.title.startsWith("Sample:") && (
+        <div className="border-accent/30 bg-accent/10 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 text-sm">
+          <p>
+            <span className="font-medium">This is a sample contract.</span>{" "}
+            <span className="text-muted">
+              Try the buttons and tabs; nothing is sent to anyone. Delete it when you&rsquo;re done.
+            </span>
+          </p>
+          {canEdit && (
+            <Button
+              variant="secondary"
+              disabled={remove.isPending}
+              onClick={() =>
+                remove.mutate(undefined, {
+                  onSuccess: () => router.replace(`/app/${orgId}`),
+                })
+              }
+            >
+              <Trash2 className="size-4" /> Delete sample
+            </Button>
+          )}
+        </div>
+      )}
       {busy && (
         <div className="border-primary/30 bg-primary/5 mb-6 rounded-lg border p-4 text-sm">
           <p className="font-medium">Analysing the contract…</p>

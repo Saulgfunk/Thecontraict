@@ -11,9 +11,12 @@ from app.deps import OrgContext, get_org_context
 from app.models import (
     AuditEvent,
     Organization,
+    OrganizationKind,
     OrganizationMembership,
     OrgRole,
     User,
+    Workspace,
+    WorkspaceKind,
     WorkspaceMembership,
 )
 from app.schemas import (
@@ -60,6 +63,17 @@ def create_organization(
     db.flush()
     set_tenant(db, org.id)
     db.add(OrganizationMembership(organization_id=org.id, user_id=user.id, role=OrgRole.OWNER))
+    if org.kind == OrganizationKind.COMPANY:
+        # A single company usually needs just one place for its contracts; start with it
+        # so contracts can be added straight away. Departments can be added later.
+        db.add(
+            Workspace(
+                organization_id=org.id,
+                name=org.name,
+                kind=WorkspaceKind.DEPARTMENT,
+                country=org.default_country,
+            )
+        )
     audit.record(
         db,
         organization_id=org.id,

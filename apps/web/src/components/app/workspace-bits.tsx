@@ -1,14 +1,20 @@
 "use client";
 
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useCurrentOrg } from "@/components/app/use-org";
 import { Button, ErrorText, Field, Input, Select } from "@/components/ui";
-import { useCreateWorkspace, useWorkspaces, type Schemas } from "@/lib/api";
+import {
+  useCreateSampleContract,
+  useCreateWorkspace,
+  useWorkspaces,
+  type Schemas,
+} from "@/lib/api";
 import { DEFAULT_WORKSPACE_KIND, WORKSPACE_KIND_LABELS, WORKSPACE_NOUN } from "@/lib/labels";
-import { errorMessage } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 const primaryLink =
   "bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium hover:opacity-90";
@@ -133,5 +139,53 @@ export function CreateWorkspaceForm({ onDone }: { onDone: () => void }) {
         <ErrorText>{errorMessage(create.error)}</ErrorText>
       </div>
     </form>
+  );
+}
+
+/**
+ * Adds the example contract and opens it. With no workspace yet (a new firm or holding),
+ * an admin gets one called "Sample client" / "Sample company" first.
+ */
+export function SampleContractButton({ className }: { className?: string }) {
+  const { orgId, org, isAdmin } = useCurrentOrg();
+  const workspaces = useWorkspaces(orgId);
+  const createWorkspace = useCreateWorkspace(orgId);
+  const sample = useCreateSampleContract(orgId);
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const editable =
+    workspaces.data?.filter((w) => w.my_role === "admin" || w.my_role === "editor") ?? [];
+  if (!workspaces.data || (editable.length === 0 && !isAdmin)) return null;
+  const busy = createWorkspace.isPending || sample.isPending;
+
+  const run = async () => {
+    setError(null);
+    try {
+      let workspaceId = editable[0]?.id;
+      if (!workspaceId) {
+        const noun = org ? WORKSPACE_NOUN[org.kind].one : "workspace";
+        const ws = (await createWorkspace.mutateAsync({
+          name: `Sample ${noun}`,
+          kind: org ? DEFAULT_WORKSPACE_KIND[org.kind] : "client",
+          parent_workspace_id: null,
+          country: null,
+        })) as Schemas["WorkspaceOut"];
+        workspaceId = ws.id;
+      }
+      const contract = (await sample.mutateAsync(workspaceId)) as Schemas["ContractDetail"];
+      router.push(`/app/${orgId}/contracts/${contract.id}`);
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
+
+  return (
+    <span className={cn("inline-flex flex-col gap-1", className)}>
+      <Button variant="secondary" onClick={() => void run()} disabled={busy}>
+        <Sparkles className="text-accent size-4" />
+        {busy ? "Adding the sample…" : "Explore a sample contract"}
+      </Button>
+      <ErrorText>{error}</ErrorText>
+    </span>
   );
 }

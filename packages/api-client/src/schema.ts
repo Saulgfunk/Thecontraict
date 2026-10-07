@@ -222,6 +222,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/workspaces/{workspace_id}/contracts/sample": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Sample Contract
+         * @description Add an example contract (with its signed copy) to explore the app. Delete it like any
+         *     other contract when done.
+         */
+        post: operations["create_sample_contract_organizations__org_id__workspaces__workspace_id__contracts_sample_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/organizations/{org_id}/contracts/{contract_id}/documents": {
         parameters: {
             query?: never;
@@ -1120,6 +1141,12 @@ export interface components {
             /** Owner Id */
             owner_id?: string | null;
             /**
+             * Reminder Emails
+             * @description People without an account to email about deadlines.
+             * @default []
+             */
+            reminder_emails?: string[];
+            /**
              * Date Rules
              * @default []
              */
@@ -1175,6 +1202,11 @@ export interface components {
              * @default 0
              */
             pending_review?: number;
+            /**
+             * Reminder Emails
+             * @default []
+             */
+            reminder_emails?: string[];
             /** Summary */
             summary: string | null;
             /** Parties */
@@ -1354,6 +1386,11 @@ export interface components {
             contract_value?: number | string | null;
             /** Notice Details */
             notice_details?: string | null;
+            /**
+             * Reminder Emails
+             * @description People without an account to email about deadlines.
+             */
+            reminder_emails?: string[] | null;
         };
         /**
          * DateAnchor
@@ -2855,6 +2892,41 @@ export interface operations {
                 "application/json": components["schemas"]["ContractCreate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_sample_contract_organizations__org_id__workspaces__workspace_id__contracts_sample_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             201: {

@@ -172,3 +172,32 @@ def test_calendar_feed(client_as: Client, contract: tuple[str, str, str]) -> Non
     assert anonymous.get(new_path).status_code == 200
     alice.delete(f"/organizations/{org_id}/calendar-feed")
     assert anonymous.get(new_path).status_code == 404
+
+
+def test_reminders_to_people_without_an_account(
+    client_as: Client, contract: tuple[str, str, str]
+) -> None:
+    org_id, _, contract_id = contract
+    alice = client_as(ALICE)
+    url = f"/organizations/{org_id}/contracts/{contract_id}"
+
+    bad = alice.patch(url, json={"reminder_emails": ["finance@example.com", "not-an-email"]})
+    assert bad.status_code == 422 and "not-an-email" in bad.text
+    res = alice.patch(
+        url, json={"reminder_emails": [" Finance@Example.com ", "finance@example.com"]}
+    )
+    assert res.json()["reminder_emails"] == ["finance@example.com"]
+
+    # The owner and the extra address each get the 90-day reminder, once.
+    assert send_due_reminders(date(2026, 10, 7)) == 2
+    external = next(e for e in email.outbox if e.to == "finance@example.com")
+    assert "Term renews automatically" in external.subject
+    assert "/app/" not in external.text and "href" not in external.html  # no app links
+    assert "asked us to remind you" in external.text
+    assert send_due_reminders(date(2026, 10, 7)) == 0
+
+    # Removed addresses get nothing further.
+    alice.patch(url, json={"reminder_emails": []})
+    email.outbox.clear()
+    send_due_reminders(date(2026, 12, 28))
+    assert {e.to for e in email.outbox} == {ALICE}

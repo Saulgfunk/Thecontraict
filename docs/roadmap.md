@@ -29,9 +29,10 @@
   Contracts list across workspaces with search; contract page led by an "At a glance"
   summary with details in tabs; a short new-contract form with "More options"; four menu
   items (Home, Contracts, Deadlines, Settings).
-- Next for simplicity: a sample contract to explore; reminders to people without a login;
-  auto-creating the first workspace for single companies; finding contracts with no
-  reminders or no signed copy.
+- Done: a sample contract (with a generated signed copy, dates relative to today) to
+  explore from the "Get started" card; reminder emails to people without an account;
+  single companies start with one workspace; quick filters on the contracts list (to
+  check, no signed copy, no upcoming dates).
 - Next for amendments: AI reading of amendment documents to propose the changes;
   side letters and SOWs as linked documents.
 - Obligations tracking, risk flags.

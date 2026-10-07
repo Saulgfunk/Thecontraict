@@ -421,13 +421,27 @@ export function useReprocessContract(orgId: string, contractId: string) {
 }
 
 export function useDeleteContract(orgId: string, contractId: string) {
-  return useContractMutation<void>(orgId, (api) =>
-    unwrap(
-      api.DELETE("/organizations/{org_id}/contracts/{contract_id}", {
-        params: { path: { org_id: orgId, contract_id: contractId } },
-      }),
-    ),
-  );
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/organizations/{org_id}/contracts/{contract_id}", {
+          params: { path: { org_id: orgId, contract_id: contractId } },
+        }),
+      ),
+    onSuccess: () => {
+      // The open contract page is still mounted until the redirect: don't refetch the
+      // contract or its documents (they are gone), only mark them stale.
+      const gone = (key: readonly unknown[]) =>
+        (key[2] === "contracts" && key[3] === contractId) || key[2] === "documents";
+      void qc.invalidateQueries({ queryKey: ["org", orgId], refetchType: "none" });
+      return qc.invalidateQueries({
+        queryKey: ["org", orgId],
+        predicate: (q) => !gone(q.queryKey),
+      });
+    },
+  });
 }
 
 export function useUpdateDateRule(orgId: string) {
@@ -786,6 +800,17 @@ export function useCreateContractManually(orgId: string, workspaceId: string) {
       api.POST("/organizations/{org_id}/workspaces/{workspace_id}/contracts/manual", {
         params: { path: { org_id: orgId, workspace_id: workspaceId } },
         body,
+      }),
+    ),
+  );
+}
+
+/** Add the ready-made example contract (with a signed copy) to a workspace. */
+export function useCreateSampleContract(orgId: string) {
+  return useContractMutation(orgId, (api, workspaceId: string) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/workspaces/{workspace_id}/contracts/sample", {
+        params: { path: { org_id: orgId, workspace_id: workspaceId } },
       }),
     ),
   );

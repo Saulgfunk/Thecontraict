@@ -61,6 +61,7 @@ export default function ContractsPage() {
             workspaceId={workspaceId || undefined}
             canEdit={false}
             search={search}
+            filters
           />
         </Card>
 

@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Enum,
@@ -17,6 +18,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -302,6 +304,11 @@ class Contract(WorkspaceScopedMixin, Base):
     currency: Mapped[str | None] = mapped_column(String(3))
     contract_value: Mapped[Decimal | None] = mapped_column(Numeric(18, 2))
     notice_details: Mapped[str | None] = mapped_column(Text)
+    # Extra people emailed about this contract's deadlines who don't use the app (e.g. a
+    # finance colleague or outside counsel). Org members get reminders as the owner.
+    reminder_emails: Mapped[list[str]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb")
+    )
 
     # {"effective_date": {"clause_refs": ["C3"], "quote": "...", "confidence": 0.9,
     #   "status": "ai_suggested"}, ...}
@@ -559,7 +566,20 @@ class ReminderLog(Base):
     are recreated whenever a contract's terms are recalculated."""
 
     __tablename__ = "reminder_logs"
-    __table_args__ = (UniqueConstraint("deadline_key", "due_date", "user_id", "days_before"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "deadline_key",
+            "due_date",
+            "user_id",
+            "email",
+            "days_before",
+            name="uq_reminder_logs_recipient_point",
+            postgresql_nulls_not_distinct=True,
+        ),
+        CheckConstraint(
+            "(user_id IS NULL) <> (email IS NULL)", name="ck_reminder_logs_one_recipient"
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     organization_id: Mapped[uuid.UUID] = mapped_column(
@@ -570,7 +590,9 @@ class ReminderLog(Base):
     )
     deadline_key: Mapped[str] = mapped_column(String(200))
     due_date: Mapped[date] = mapped_column(Date)
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # Either an app user or, for people without an account, just an email address.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    email: Mapped[str | None] = mapped_column(String(320))
     days_before: Mapped[int] = mapped_column(Integer)
     emailed: Mapped[bool] = mapped_column(Boolean, default=False)
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

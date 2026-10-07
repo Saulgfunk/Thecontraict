@@ -1616,6 +1616,92 @@
         }
       }
     },
+    "/organizations/{org_id}/workspaces/{workspace_id}/contracts/sample": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Create Sample Contract",
+        "description": "Add an example contract (with its signed copy) to explore the app. Delete it like any\nother contract when done.",
+        "operationId": "create_sample_contract_organizations__org_id__workspaces__workspace_id__contracts_sample_post",
+        "parameters": [
+          {
+            "name": "workspace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Org Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-dev-user-email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/{org_id}/contracts/{contract_id}/documents": {
       "post": {
         "tags": [
@@ -6279,6 +6365,15 @@
             ],
             "title": "Owner Id"
           },
+          "reminder_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reminder Emails",
+            "description": "People without an account to email about deadlines.",
+            "default": []
+          },
           "date_rules": {
             "items": {
               "$ref": "#/components/schemas/DateRuleIn"
@@ -6424,6 +6519,14 @@
             "type": "integer",
             "title": "Pending Review",
             "default": 0
+          },
+          "reminder_emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reminder Emails",
+            "default": []
           },
           "summary": {
             "anyOf": [
@@ -7145,6 +7248,21 @@
               }
             ],
             "title": "Notice Details"
+          },
+          "reminder_emails": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reminder Emails",
+            "description": "People without an account to email about deadlines."
           }
         },
         "type": "object",

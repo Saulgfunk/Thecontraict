@@ -1,3 +1,4 @@
+import re
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
@@ -21,6 +22,25 @@ from app.models import (
     ReviewStatus,
 )
 from app.schemas import ORMModel, _check_country
+
+MAX_REMINDER_EMAILS = 10
+_EMAIL = re.compile(r"^[^@\s<>,;]+@[^@\s<>,;]+\.[^@\s<>,;]{2,}$")
+
+
+def _check_emails(v: list[str] | None) -> list[str] | None:
+    """Trim, lower-case and de-duplicate; reject anything that isn't an address."""
+    if v is None:
+        return v
+    out: list[str] = []
+    for raw in v:
+        address = raw.strip().lower()
+        if not _EMAIL.match(address) or len(address) > 320:
+            raise ValueError(f"Not an email address: {raw.strip()[:80]}")
+        if address not in out:
+            out.append(address)
+    if len(out) > MAX_REMINDER_EMAILS:
+        raise ValueError(f"At most {MAX_REMINDER_EMAILS} extra reminder recipients")
+    return out
 
 
 class DocumentOut(ORMModel):
@@ -188,6 +208,7 @@ class ContractListItem(ContractSummary):
 
 
 class ContractDetail(ContractSummary):
+    reminder_emails: list[str] = []
     summary: str | None
     parties: list[dict[str, Any]]
     initial_term_amount: int | None
@@ -259,8 +280,12 @@ class ContractUpdate(BaseModel):
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     contract_value: Decimal | None = None
     notice_details: str | None = None
+    reminder_emails: list[str] | None = Field(
+        default=None, description="People without an account to email about deadlines."
+    )
 
     _country = field_validator("holiday_country")(_check_country)
+    _emails = field_validator("reminder_emails")(_check_emails)
 
     @field_validator("currency")
     @classmethod
@@ -288,10 +313,14 @@ class ContractCreate(BaseModel):
     contract_value: Decimal | None = None
     notice_details: str | None = None
     owner_id: uuid.UUID | None = None
+    reminder_emails: list[str] = Field(
+        default=[], description="People without an account to email about deadlines."
+    )
     date_rules: list[DateRuleIn] = Field(default=[], max_length=50)
     payment_terms: list[PaymentTermIn] = Field(default=[], max_length=50)
 
     _country = field_validator("holiday_country")(_check_country)
+    _emails = field_validator("reminder_emails")(_check_emails)
 
     @field_validator("currency")
     @classmethod

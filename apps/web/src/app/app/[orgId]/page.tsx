@@ -15,7 +15,11 @@ import { useState } from "react";
 
 import { AttentionRow, useUndoToast } from "@/components/app/deadline-actions";
 import { useCurrentOrg } from "@/components/app/use-org";
-import { AddContractButton, CreateWorkspaceForm } from "@/components/app/workspace-bits";
+import {
+  AddContractButton,
+  CreateWorkspaceForm,
+  SampleContractButton,
+} from "@/components/app/workspace-bits";
 import { Card, ErrorText, Loading, PageHeader } from "@/components/ui";
 import { useAllContracts, useDeadlines, useWorkspaces, type Schemas } from "@/lib/api";
 import { WORKSPACE_NOUN } from "@/lib/labels";
@@ -123,9 +127,14 @@ function GetStarted() {
     {
       icon: FilePlus2,
       title: "Add a contract",
-      text: "Type in the end date and notice period, or upload the signed copy.",
+      text: "Type in the end date and notice period, or upload the signed copy. Not ready? Look around with a sample first.",
       done: false,
-      action: hasWorkspace && <AddContractButton />,
+      action: (
+        <div className="flex flex-wrap items-start gap-2">
+          {hasWorkspace && <AddContractButton />}
+          <SampleContractButton />
+        </div>
+      ),
     },
     {
       icon: BellRing,

@@ -174,3 +174,34 @@ def test_list_contracts_across_workspaces(client_as: Client) -> None:
         bob.get(f"/organizations/{org_id}/contracts", params={"workspace_id": ws_b}).status_code
         == 404
     )
+
+
+def test_a_company_starts_with_one_workspace(client_as: Client) -> None:
+    alice = client_as(ALICE)
+    company = alice.post("/organizations", json={"name": "Acme Ltd", "kind": "company"}).json()
+    firm = alice.post("/organizations", json={"name": "Law & Co", "kind": "law_firm"}).json()
+    (ws,) = alice.get(f"/organizations/{company['id']}/workspaces").json()
+    assert (ws["name"], ws["kind"], ws["my_role"]) == ("Acme Ltd", "department", "admin")
+    # Firms and holdings add their clients or companies themselves.
+    assert alice.get(f"/organizations/{firm['id']}/workspaces").json() == []
+
+
+def test_sample_contract(client_as: Client) -> None:
+    org_id, ws_id = setup(client_as)
+    alice = client_as(ALICE)
+    res = alice.post(f"/organizations/{org_id}/workspaces/{ws_id}/contracts/sample")
+    assert res.status_code == 201, res.text
+    c = alice.get(f"/organizations/{org_id}/contracts/{res.json()['id']}").json()
+    assert c["title"].startswith("Sample:")
+    (doc,) = c["documents"]
+    assert doc["status"] == "ready"  # split into clauses for reading
+    clauses = alice.get(f"/organizations/{org_id}/documents/{doc['id']}/clauses").json()
+    assert any("14 days" in cl["text"] for cl in clauses)
+    # The notice deadline is always a few weeks away, so the home page has something to show.
+    notice = next(d for d in c["deadlines"] if d["kind"] == "notice")
+    days = (date.fromisoformat(notice["due_date"]) - date.today()).days
+    assert 7 <= days <= 31, days
+    assert c["next_deadline"]["kind"] == "notice"
+    # A second sample is fine (e.g. after deleting the first one or in another workspace).
+    again = alice.post(f"/organizations/{org_id}/workspaces/{ws_id}/contracts/sample")
+    assert again.status_code == 201

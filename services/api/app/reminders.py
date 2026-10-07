@@ -154,6 +154,7 @@ def _send_for_org(org_id: uuid.UUID, today: date) -> int:
         ).all()
 
         per_user: dict[uuid.UUID, list[PendingReminder]] = defaultdict(list)
+        per_address: dict[str, list[PendingReminder]] = defaultdict(list)
         created = 0
         for deadline, contract in rows:
             days_left = (deadline.due_date - today).days
@@ -193,6 +194,25 @@ def _send_for_org(org_id: uuid.UUID, today: date) -> int:
                 )
                 if m.email_reminders:
                     per_user[m.user_id].append(PendingReminder(deadline, contract, days_left))
+            for address in contract.reminder_emails or []:
+                inserted = db.execute(
+                    insert(ReminderLog)
+                    .values(
+                        id=uuid.uuid4(),
+                        organization_id=org_id,
+                        contract_id=contract.id,
+                        deadline_key=deadline_key(deadline),
+                        due_date=deadline.due_date,
+                        email=address,
+                        days_before=point,
+                        emailed=True,
+                    )
+                    .on_conflict_do_nothing()
+                    .returning(ReminderLog.id)
+                ).scalar()
+                if inserted is not None:
+                    created += 1
+                    per_address[address].append(PendingReminder(deadline, contract, days_left))
         db.commit()
 
         for user_id, items in per_user.items():
@@ -201,6 +221,11 @@ def _send_for_org(org_id: uuid.UUID, today: date) -> int:
                 email.send(_reminder_email(org, user, items))
             except Exception:
                 log.exception("Sending reminder email to %s failed", user.email)
+        for address, items in per_address.items():
+            try:
+                email.send(_external_reminder_email(org, address, items))
+            except Exception:
+                log.exception("Sending reminder email to %s failed", address)
         return created
 
 
@@ -210,10 +235,16 @@ def _send_for_org(org_id: uuid.UUID, today: date) -> int:
 
 
 def _row_html(text: str, sub: str, link: str, badge: str) -> str:
+    """One row; without a link the title is plain text."""
+    title = (
+        f'<a href="{html.escape(link)}" style="color:#0f172a;font-weight:600;'
+        f'text-decoration:none">{html.escape(text)}</a>'
+        if link
+        else f'<span style="color:#0f172a;font-weight:600">{html.escape(text)}</span>'
+    )
     return (
         '<tr><td style="padding:10px 0;border-bottom:1px solid #e2e8f0">'
-        f'<a href="{html.escape(link)}" style="color:#0f172a;font-weight:600;'
-        f'text-decoration:none">{html.escape(text)}</a><br>'
+        f"{title}<br>"
         f'<span style="color:#64748b;font-size:13px">{html.escape(sub)}</span></td>'
         '<td style="padding:10px 0;border-bottom:1px solid #e2e8f0;text-align:right;'
         f'white-space:nowrap;color:#b45309;font-weight:600">{html.escape(badge)}</td></tr>'
@@ -261,6 +292,42 @@ def _reminder_email(org: Organization, user: User, items: list[PendingReminder])
         subject=subject,
         text=f"{intro}\n\n" + "\n".join(lines) + f"\n\n{FOOTER}\n",
         html=_wrap_html("Deadline reminder", intro, "".join(rows), FOOTER),
+    )
+
+
+def _external_reminder_email(
+    org: Organization, address: str, items: list[PendingReminder]
+) -> email.Email:
+    """For people without an account: the facts, no links into the app."""
+    items.sort(key=lambda i: i.deadline.due_date)
+    first = items[0]
+    subject = (
+        f"{first.deadline.label}: {first.contract.title} ({_when(first.days_left)})"
+        if len(items) == 1
+        else f"{len(items)} contract deadlines coming up"
+    )
+    lines, rows = [], []
+    for i in items:
+        parts = [i.contract.title]
+        if i.contract.counterparty_name:
+            parts.append(i.contract.counterparty_name)
+        parts.append(f"{i.deadline.due_date:%a %d %b %Y}")
+        sub = " · ".join(parts)
+        if i.contract.notice_details and i.deadline.kind in ("notice", "option"):
+            sub += f" · How: {i.contract.notice_details}"
+        lines.append(f"- {i.deadline.label} {_when(i.days_left)}: {sub}")
+        rows.append(_row_html(i.deadline.label, sub, "", _when(i.days_left)))
+    intro = f"{org.name} asked us to remind you about these contract dates."
+    footer = (
+        f"You receive these reminders because {org.name} added {address} to this "
+        "contract. Ask them to remove you to stop them. Dates are calculated from the "
+        "contract terms; check the contract before acting."
+    )
+    return email.Email(
+        to=address,
+        subject=subject,
+        text=f"{intro}\n\n" + "\n".join(lines) + f"\n\n{footer}\n",
+        html=_wrap_html("Deadline reminder", intro, "".join(rows), footer),
     )
 
 

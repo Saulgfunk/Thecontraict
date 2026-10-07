@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { DateTile, DueText, deadlineSentence } from "@/components/app/deadline-actions";
 import { Avatar } from "@/components/app/logo";
 import { Badge, ErrorText, Loading } from "@/components/ui";
-import { useAiEnabled, useAllContracts, useUploadContract } from "@/lib/api";
+import { useAiEnabled, useAllContracts, useUploadContract, type Schemas } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -88,31 +88,70 @@ function Uploader({ orgId, workspaceId }: { orgId: string; workspaceId: string }
   );
 }
 
+type Item = Schemas["ContractListItem"];
+type Filter = "all" | "check" | "no_copy" | "no_dates";
+
+const FILTERS: Record<Filter, { label: string; test: (c: Item) => boolean }> = {
+  all: { label: "All", test: () => true },
+  check: { label: "To check", test: (c) => (c.pending_review ?? 0) > 0 },
+  no_copy: { label: "No signed copy", test: (c) => c.documents.length === 0 },
+  no_dates: { label: "No upcoming dates", test: (c) => !c.next_deadline },
+};
+
 export function ContractsPanel({
   orgId,
   workspaceId,
   canEdit,
   search = "",
+  filters = false,
 }: {
   orgId: string;
   /** Omit to list contracts from every workspace the user can access. */
   workspaceId?: string;
   canEdit: boolean;
   search?: string;
+  /** Show the quick filters (to check, no signed copy, no upcoming dates). */
+  filters?: boolean;
 }) {
   const contracts = useAllContracts(orgId, workspaceId);
+  const [show, setShow] = useState<Filter>("all");
   const needle = search.trim().toLowerCase();
-  const list = contracts.data?.filter(
+  const matching = contracts.data?.filter(
     (c) =>
       !needle ||
       [c.title, c.counterparty_name, c.contract_type, c.workspace_name].some((v) =>
         v?.toLowerCase().includes(needle),
       ),
   );
+  const list = matching?.filter(FILTERS[show].test);
 
   return (
     <>
       {canEdit && workspaceId && <Uploader orgId={orgId} workspaceId={workspaceId} />}
+      {filters && matching && matching.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5" role="group" aria-label="Show">
+          {(Object.keys(FILTERS) as Filter[]).map((key) => {
+            const count = matching.filter(FILTERS[key].test).length;
+            if (key !== "all" && count === 0 && show !== key) return null;
+            return (
+              <button
+                key={key}
+                aria-pressed={show === key}
+                onClick={() => setShow(key)}
+                className={cn(
+                  "rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors ring-inset",
+                  show === key
+                    ? "bg-primary text-primary-foreground ring-primary"
+                    : "text-muted ring-border hover:text-foreground bg-surface",
+                )}
+              >
+                {FILTERS[key].label}
+                <span className="ml-1.5 opacity-70">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {contracts.isPending ? (
         <Loading />
       ) : contracts.error ? (

@@ -58,9 +58,10 @@ from app.models import (
     WorkspaceRole,
 )
 from app.pipeline.compute import refresh_deadlines
-from app.pipeline.parse import UnsupportedDocument, sniff_mime_type
+from app.pipeline.parse import DOCX_MIME, UnsupportedDocument, sniff_mime_type
 from app.pipeline.run import MANUAL
 from app.reminders import accessible_workspace_ids
+from app.sample import sample_document, sample_terms
 from app.storage import get_storage
 from app.workers.tasks import enqueue_document
 
@@ -330,6 +331,37 @@ def create_contract_manually(
     return _detail(contract)
 
 
+@router.post(
+    "/workspaces/{workspace_id}/contracts/sample",
+    response_model=ContractDetail,
+    status_code=201,
+)
+def create_sample_contract(
+    workspace_id: uuid.UUID, background: BackgroundTasks, ctx: OrgContext = Depends(get_org_context)
+) -> ContractDetail:
+    """Add an example contract (with its signed copy) to explore the app. Delete it like any
+    other contract when done."""
+    workspace = ctx.get_workspace(workspace_id, WorkspaceRole.EDITOR)
+    terms = sample_terms(
+        date.today(), workspace.country or ctx.membership.organization.default_country
+    )
+    detail = create_contract_manually(workspace_id, terms, ctx)
+    contract = _get_contract(ctx, detail.id, WorkspaceRole.EDITOR)
+    data = sample_document(terms)
+    document = _store_document(
+        ctx,
+        contract,
+        data,
+        "sample-office-cleaning-agreement.docx",
+        DOCX_MIME,
+        hashlib.sha256(data).hexdigest(),
+    )
+    ctx.db.commit()
+    ctx.db.refresh(contract)
+    enqueue_document(background, ctx.org_id, document.id)
+    return _detail(contract)
+
+
 @router.post("/contracts/{contract_id}/documents", response_model=ContractDetail, status_code=201)
 async def attach_document(
     contract_id: uuid.UUID,
@@ -430,6 +462,8 @@ def update_contract(
         if owner_id is not None:
             _check_owner(ctx, contract, owner_id)
         contract.owner_id = owner_id
+    if "reminder_emails" in changes:
+        contract.reminder_emails = changes.pop("reminder_emails") or []
     sources = dict(contract.field_sources or {})
     for column, value in changes.items():
         if column not in CONTRACT_EDITABLE:
