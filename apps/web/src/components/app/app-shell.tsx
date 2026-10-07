@@ -7,12 +7,14 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  Settings,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { NotificationBell } from "@/components/app/notification-bell";
 import { ErrorText, Loading, Select } from "@/components/ui";
 import { useMe } from "@/lib/api";
 import { useAuthState } from "@/lib/auth";
@@ -59,15 +61,19 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
     { href: `${base}/deadlines`, label: "Deadlines", icon: CalendarClock },
     { href: `${base}/tools/deadline-calculator`, label: "Deadline calculator", icon: Calculator },
     { href: `${base}/members`, label: "Members", icon: Users },
+    { href: `${base}/settings`, label: "Settings", icon: Settings },
     ...(isAdmin ? [{ href: `${base}/audit`, label: "Audit log", icon: History }] : []),
   ];
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <aside className="border-border bg-surface flex flex-col gap-6 border-b p-4 md:w-64 md:border-r md:border-b-0">
-        <Link href={base} className="px-2 text-lg font-semibold">
-          TheContr<span className="text-primary">AI</span>ct
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href={base} className="px-2 text-lg font-semibold">
+            TheContr<span className="text-primary">AI</span>ct
+          </Link>
+          <NotificationBell orgId={orgId} />
+        </div>
 
         <div className="space-y-1">
           <div className="text-muted flex items-center gap-2 px-2 text-xs font-medium tracking-wide uppercase">
@@ -123,7 +129,7 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
           </button>
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-10">{children}</main>
+      <main className="min-w-0 flex-1 p-6 md:p-10">{children}</main>
     </div>
   );
 }

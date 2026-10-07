@@ -35,8 +35,24 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-opus-5-5"
     extraction_effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
 
+    chat_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+
     # Run Celery tasks inline (tests, or development without a worker).
     tasks_eager: bool = False
+
+    # Public URLs, used in emails and calendar feeds.
+    app_url: str = "http://localhost:3000"
+    api_url: str = "http://localhost:8000"
+
+    # "console" logs emails (development); "smtp" or "postmark" send them.
+    email_backend: Literal["console", "smtp", "postmark"] = "console"
+    email_from: str = "TheContrAIct <reminders@localhost>"
+    smtp_host: str = "localhost"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_starttls: bool = True
+    postmark_server_token: str = ""
 
 
 @lru_cache

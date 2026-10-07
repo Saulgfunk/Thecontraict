@@ -84,6 +84,8 @@ class Organization(TimestampMixin, Base):
     kind: Mapped[OrganizationKind] = mapped_column(_enum(OrganizationKind, "organization_kind"))
     default_timezone: Mapped[str] = mapped_column(String(64), default="UTC")
     default_country: Mapped[str | None] = mapped_column(String(2))
+    # Days before a deadline to send reminders, per deadline kind (see DEFAULT_REMINDER_DAYS).
+    reminder_days: Mapped[dict[str, list[int]]] = mapped_column(JSONB, default=dict)
 
 
 class OrganizationMembership(TimestampMixin, Base):
@@ -97,6 +99,8 @@ class OrganizationMembership(TimestampMixin, Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
     role: Mapped[OrgRole] = mapped_column(_enum(OrgRole, "org_role"))
+    email_reminders: Mapped[bool] = mapped_column(Boolean, default=True)
+    weekly_digest: Mapped[bool] = mapped_column(Boolean, default=True)
 
     user: Mapped[User] = relationship(lazy="joined")
     organization: Mapped[Organization] = relationship(lazy="joined")
@@ -300,6 +304,10 @@ class Contract(WorkspaceScopedMixin, Base):
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL")
     )
+    # Receives the reminders for this contract's deadlines (defaults to the uploader).
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
 
     documents: Mapped[list["Document"]] = relationship(
         back_populates="contract",
@@ -476,3 +484,136 @@ class Deadline(WorkspaceScopedMixin, Base):
     )
 
     contract: Mapped[Contract] = relationship(back_populates="deadlines")
+
+
+# ---------------------------------------------------------------------------
+# Reminders, notifications, calendar feeds
+# ---------------------------------------------------------------------------
+
+DEFAULT_REMINDER_DAYS: dict[str, list[int]] = {
+    "notice": [120, 90, 60, 30, 14, 7, 3, 1, 0],
+    "option": [90, 60, 30, 14, 7, 1, 0],
+    "term_end": [90, 30, 7, 0],
+    "price_review": [30, 7, 0],
+    "payment": [7, 1, 0],
+    "other": [30, 7, 1, 0],
+}
+
+
+class Notification(TimestampMixin, Base):
+    """In-app notification for one user."""
+
+    __tablename__ = "notifications"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    kind: Mapped[str] = mapped_column(String(50))  # "deadline_reminder" | ...
+    title: Mapped[str] = mapped_column(String(300))
+    body: Mapped[str | None] = mapped_column(Text)
+    link: Mapped[str | None] = mapped_column(
+        String(500)
+    )  # app path, e.g. /app/<org>/contracts/<id>
+    contract_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE")
+    )
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ReminderLog(Base):
+    """One row per reminder sent, so each reminder point is sent once per user. Keyed by
+    the deadline's stable identity (``deadline_key``), not its row id, because deadlines
+    are recreated whenever a contract's terms are recalculated."""
+
+    __tablename__ = "reminder_logs"
+    __table_args__ = (UniqueConstraint("deadline_key", "due_date", "user_id", "days_before"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    contract_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE"), index=True
+    )
+    deadline_key: Mapped[str] = mapped_column(String(200))
+    due_date: Mapped[date] = mapped_column(Date)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    days_before: Mapped[int] = mapped_column(Integer)
+    emailed: Mapped[bool] = mapped_column(Boolean, default=False)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+def deadline_key(deadline: "Deadline") -> str:
+    return ":".join(
+        str(x or "")
+        for x in (
+            deadline.contract_id,
+            deadline.date_rule_id,
+            deadline.payment_term_id,
+            deadline.kind,
+        )
+    )
+
+
+class CalendarFeed(TimestampMixin, Base):
+    """A private iCal feed of a user's deadlines. Only the token's hash is stored."""
+
+    __tablename__ = "calendar_feeds"
+    __table_args__ = (UniqueConstraint("organization_id", "user_id"),)
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    last_accessed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+# ---------------------------------------------------------------------------
+# AI chat
+# ---------------------------------------------------------------------------
+
+
+class ChatThread(TimestampMixin, Base):
+    __tablename__ = "chat_threads"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), index=True
+    )
+    # Null: the whole workspace. Set: one contract.
+    contract_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(300))
+
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        order_by="ChatMessage.created_at", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class ChatMessage(TimestampMixin, Base):
+    __tablename__ = "chat_messages"
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    thread_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("chat_threads.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(20))  # "user" | "assistant"
+    # Assistant: [{"text": "...", "citations": [{"contract_id", "clause_refs", "cited_text",
+    #   "contract_title"}]}]. User: [{"text": "..."}].
+    blocks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    model: Mapped[str | None] = mapped_column(String(100))
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text)

@@ -5,14 +5,16 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { ChatPanel } from "@/components/app/chat-panel";
 import { ClauseViewer } from "@/components/app/clause-viewer";
+import { OwnerSelect } from "@/components/app/owner-select";
 import { DateRulesCard, DeadlinesCard, PaymentTermsCard } from "@/components/app/contract-review";
 import { ContractTerms } from "@/components/app/contract-terms";
 import { useCurrentOrg } from "@/components/app/use-org";
 import { Badge, Button, Card, ErrorText, Loading, PageHeader } from "@/components/ui";
 import { useContract, useDeleteContract, useReprocessContract, useWorkspace } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
-import { errorMessage } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 export default function ContractPage() {
   const { contractId } = useParams<{ contractId: string }>();
@@ -22,7 +24,21 @@ export default function ContractPage() {
   const workspace = useWorkspace(orgId, contract.data?.workspace_id ?? "");
   const reprocess = useReprocessContract(orgId, contractId);
   const remove = useDeleteContract(orgId, contractId);
-  const [selected, setSelected] = useState<string[]>([]);
+  // Links from workspace chat answers carry the cited clauses in the URL hash (#C5,C8).
+  // (The clause list only renders after data loads, so reading window here is safe.)
+  const [selected, setSelected] = useState<string[]>(() =>
+    typeof window === "undefined"
+      ? []
+      : window.location.hash
+          .slice(1)
+          .split(",")
+          .filter((r) => /^C\d+$/.test(r)),
+  );
+  const [tab, setTab] = useState<"document" | "chat">("document");
+  const showRefs = (refs: string[]) => {
+    setSelected(refs);
+    setTab("document");
+  };
 
   if (contract.isPending) return <Loading />;
   if (contract.error) return <ErrorText>{errorMessage(contract.error)}</ErrorText>;
@@ -49,6 +65,7 @@ export default function ContractPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={status.tone}>{status.label}</Badge>
+            <OwnerSelect orgId={orgId} contract={c} canEdit={canEdit} />
             {canEdit && (
               <>
                 <Button
@@ -122,20 +139,44 @@ export default function ContractPage() {
             orgId={orgId}
             contract={c}
             canEdit={canEdit}
-            onSelectRefs={setSelected}
+            onSelectRefs={showRefs}
           />
-          <DateRulesCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={setSelected} />
-          <PaymentTermsCard
-            orgId={orgId}
-            contract={c}
-            canEdit={canEdit}
-            onSelectRefs={setSelected}
-          />
+          <DateRulesCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
+          <PaymentTermsCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
         </div>
         <div className="xl:col-span-2">
           <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
-            <Card title="Document" className="flex h-full flex-col [&>div]:min-h-0 [&>div]:flex-1">
-              <ClauseViewer orgId={orgId} document={doc} selected={selected} />
+            <Card
+              className="flex h-full flex-col [&>div]:min-h-0 [&>div]:flex-1"
+              title={tab === "document" ? "Document" : "Ask about this contract"}
+              actions={
+                <div className="border-border flex rounded-md border p-0.5 text-sm">
+                  {(["document", "chat"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={cn(
+                        "rounded px-3 py-1",
+                        tab === t ? "bg-primary text-primary-foreground" : "text-muted",
+                      )}
+                    >
+                      {t === "document" ? "Document" : "Ask AI"}
+                    </button>
+                  ))}
+                </div>
+              }
+            >
+              {tab === "document" ? (
+                <ClauseViewer orgId={orgId} document={doc} selected={selected} />
+              ) : (
+                <ChatPanel
+                  className="h-full"
+                  orgId={orgId}
+                  workspaceId={c.workspace_id}
+                  contractId={c.id}
+                  onCitation={(cit) => showRefs(cit.clause_refs)}
+                />
+              )}
             </Card>
           </div>
         </div>

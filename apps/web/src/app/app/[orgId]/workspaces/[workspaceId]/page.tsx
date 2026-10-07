@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -93,7 +93,17 @@ export default function WorkspacePage() {
       <PageHeader
         title={ws.name}
         description={[WORKSPACE_KIND_LABELS[ws.kind], ws.country].filter(Boolean).join(" · ")}
-        actions={<Badge tone="primary">Your role: {WORKSPACE_ROLE_LABELS[ws.my_role]}</Badge>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Badge tone="primary">Your role: {WORKSPACE_ROLE_LABELS[ws.my_role]}</Badge>
+            <Link
+              href={`/app/${orgId}/workspaces/${workspaceId}/chat`}
+              className="bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium hover:opacity-90"
+            >
+              <Sparkles className="size-4" /> Ask AI
+            </Link>
+          </div>
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-3">

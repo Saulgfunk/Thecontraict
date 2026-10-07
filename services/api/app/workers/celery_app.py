@@ -1,6 +1,7 @@
 """Celery application for background work (document pipeline, reminders, digests)."""
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.config import get_settings
 
@@ -20,8 +21,14 @@ celery_app.conf.update(
     enable_utc=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
-    # Reminder scanning and digests are added to the beat schedule in Phase 1.
-    beat_schedule={},
+    beat_schedule={
+        # Idempotent: each reminder point is sent once, so running often is safe.
+        "send-due-reminders": {"task": "reminders.send_due", "schedule": crontab(minute=5)},
+        "send-weekly-digests": {
+            "task": "reminders.weekly_digest",
+            "schedule": crontab(minute=0, hour=6, day_of_week="mon"),
+        },
+    },
 )
 
 

@@ -47,6 +47,7 @@ from app.models import (
     DeadlineStatus,
     Document,
     DocumentStatus,
+    OrganizationMembership,
     PaymentTerm,
     ReviewStatus,
     Workspace,
@@ -55,6 +56,7 @@ from app.models import (
 )
 from app.pipeline.compute import refresh_deadlines
 from app.pipeline.parse import UnsupportedDocument, sniff_mime_type
+from app.reminders import accessible_workspace_ids
 from app.storage import get_storage
 from app.workers.tasks import enqueue_document
 
@@ -122,6 +124,21 @@ def _recompute(ctx: OrgContext, contract: Contract) -> None:
     refresh_deadlines(ctx.db, contract, ctx.membership.organization.default_country)
 
 
+def _check_owner(ctx: OrgContext, contract: Contract, user_id: uuid.UUID) -> None:
+    """The owner must be able to see the contract."""
+    membership = ctx.db.scalar(
+        select(OrganizationMembership).where(
+            OrganizationMembership.organization_id == ctx.org_id,
+            OrganizationMembership.user_id == user_id,
+        )
+    )
+    allowed = accessible_workspace_ids(ctx.db, membership) if membership else set()
+    if allowed is not None and contract.workspace_id not in allowed:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "The owner must have access to this workspace"
+        )
+
+
 def _safe_filename(name: str) -> str:
     name = name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
     return re.sub(r"[^\w.\- ]", "_", name).strip() or "document"
@@ -176,6 +193,7 @@ async def upload_contract(
         title=(title or filename.rsplit(".", 1)[0])[:500],
         status=ContractStatus.PROCESSING,
         created_by_id=ctx.user.id,
+        owner_id=ctx.user.id,
     )
     ctx.db.add(contract)
     ctx.db.flush()
@@ -243,6 +261,11 @@ def update_contract(
 ) -> ContractDetail:
     contract = _get_contract(ctx, contract_id, WorkspaceRole.EDITOR)
     changes = body.model_dump(exclude_unset=True)
+    if "owner_id" in changes:
+        owner_id = changes.pop("owner_id")
+        if owner_id is not None:
+            _check_owner(ctx, contract, owner_id)
+        contract.owner_id = owner_id
     sources = dict(contract.field_sources or {})
     for column, value in changes.items():
         if column not in CONTRACT_EDITABLE:

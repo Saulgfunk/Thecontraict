@@ -22,6 +22,7 @@ from app.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = (
+    "chat_messages, chat_threads, notifications, reminder_logs, calendar_feeds, "
     "deadlines, payment_terms, date_rules, extraction_runs, clauses, documents, contracts, "
     "audit_events, workspace_memberships, workspaces, organization_memberships, "
     "organizations, users"

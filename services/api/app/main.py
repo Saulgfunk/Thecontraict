@@ -4,7 +4,14 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.db import engine
-from app.routers import contracts, deadlines, organizations, workspaces
+from app.routers import (
+    chat,
+    contracts,
+    deadlines,
+    notifications,
+    organizations,
+    workspaces,
+)
 
 
 def create_app() -> FastAPI:
@@ -21,6 +28,8 @@ def create_app() -> FastAPI:
     app.include_router(workspaces.router)
     app.include_router(contracts.router)
     app.include_router(deadlines.router)
+    app.include_router(notifications.router)
+    app.include_router(chat.router)
 
     @app.get("/health", tags=["system"])
     def health() -> dict[str, str]:

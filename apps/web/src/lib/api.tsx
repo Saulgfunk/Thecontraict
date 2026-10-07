@@ -14,7 +14,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuthState } from "./auth";
 import { API_URL } from "./config";
@@ -41,11 +41,15 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
     () => createApiClient({ baseUrl: API_URL, getHeaders: auth.getHeaders }),
     [auth.getHeaders],
   );
-  // Never show one user's cached data to another after switching accounts.
+  // Never show one user's cached data to another after switching accounts. Only clear on
+  // an actual change of user: clearing when auth first resolves would drop in-flight queries.
   const userKey = auth.status === "signed-in" ? auth.email : null;
+  const lastUser = useRef<string | null>(null);
   useEffect(() => {
-    queryClient.clear();
-  }, [userKey, queryClient]);
+    if (auth.status === "loading") return;
+    if (lastUser.current !== null && lastUser.current !== userKey) queryClient.clear();
+    lastUser.current = userKey;
+  }, [auth.status, userKey, queryClient]);
   return (
     <ApiContext.Provider value={api}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -455,4 +459,205 @@ export function useUpdateDeadline(orgId: string) {
         }),
       ),
   );
+}
+
+// ---- Notifications, preferences, reminders, calendar ----
+
+export function useNotifications(orgId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "notifications"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/notifications", {
+          params: { path: { org_id: orgId }, query: { limit: 30 } },
+        }),
+      ),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useMarkNotificationsRead(orgId: string) {
+  return useContractMutation(orgId, (api, ids: string[] | null) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/notifications/read", {
+        params: { path: { org_id: orgId } },
+        body: { ids },
+      }),
+    ),
+  );
+}
+
+export function usePreferences(orgId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "preferences"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/me/preferences", { params: { path: { org_id: orgId } } }),
+      ),
+  });
+}
+
+export function useUpdatePreferences(orgId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["PreferencesUpdate"]) =>
+    unwrap(
+      api.PATCH("/organizations/{org_id}/me/preferences", {
+        params: { path: { org_id: orgId } },
+        body,
+      }),
+    ),
+  );
+}
+
+export function useReminderSettings(orgId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "reminder-settings"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/reminder-settings", {
+          params: { path: { org_id: orgId } },
+        }),
+      ),
+  });
+}
+
+export function useUpdateReminderSettings(orgId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["ReminderSettings"]) =>
+    unwrap(
+      api.PUT("/organizations/{org_id}/reminder-settings", {
+        params: { path: { org_id: orgId } },
+        body,
+      }),
+    ),
+  );
+}
+
+export function useCalendarFeed(orgId: string) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "calendar-feed"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/calendar-feed", { params: { path: { org_id: orgId } } }),
+      ),
+  });
+}
+
+export function useCreateCalendarFeed(orgId: string) {
+  return useContractMutation<void>(orgId, (api) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/calendar-feed", { params: { path: { org_id: orgId } } }),
+    ),
+  );
+}
+
+export function useDeleteCalendarFeed(orgId: string) {
+  return useContractMutation<void>(orgId, (api) =>
+    unwrap(
+      api.DELETE("/organizations/{org_id}/calendar-feed", { params: { path: { org_id: orgId } } }),
+    ),
+  );
+}
+
+// ---- Chat ----
+
+export function useChatThreads(
+  orgId: string,
+  query: { workspace_id?: string; contract_id?: string },
+) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "chat", "threads", query],
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/chat/threads", {
+          params: { path: { org_id: orgId }, query },
+        }),
+      ),
+  });
+}
+
+export function useChatThread(orgId: string, threadId: string | null) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["org", orgId, "chat", "thread", threadId],
+    enabled: !!threadId,
+    queryFn: () =>
+      unwrap(
+        api.GET("/organizations/{org_id}/chat/threads/{thread_id}", {
+          params: { path: { org_id: orgId, thread_id: threadId! } },
+        }),
+      ),
+  });
+}
+
+export function useCreateChatThread(orgId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["ThreadCreate"]) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/chat/threads", {
+        params: { path: { org_id: orgId } },
+        body,
+      }),
+    ),
+  );
+}
+
+export function useDeleteChatThread(orgId: string) {
+  return useContractMutation(orgId, (api, threadId: string) =>
+    unwrap(
+      api.DELETE("/organizations/{org_id}/chat/threads/{thread_id}", {
+        params: { path: { org_id: orgId, thread_id: threadId } },
+      }),
+    ),
+  );
+}
+
+export type ChatEvent =
+  | { type: "delta"; text: string }
+  | { type: "message"; message: Schemas["MessageOut"] }
+  | { type: "error"; detail: string; message?: Schemas["MessageOut"] };
+
+/** POST a question and stream the answer (Server-Sent Events over fetch). */
+export function useSendChatMessage(orgId: string) {
+  const auth = useAuthState();
+  const qc = useQueryClient();
+  return async (threadId: string, text: string, onEvent: (e: ChatEvent) => void) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/organizations/${orgId}/chat/threads/${threadId}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(await auth.getHeaders()) },
+          body: JSON.stringify({ text }),
+        },
+      );
+      if (!res.ok || !res.body) {
+        const body = await res.json().catch(() => null);
+        onEvent({ type: "error", detail: body?.detail ?? `Request failed (${res.status})` });
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let split;
+        while ((split = buffer.indexOf("\n\n")) >= 0) {
+          const chunk = buffer.slice(0, split);
+          buffer = buffer.slice(split + 2);
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("data: ")) onEvent(JSON.parse(line.slice(6)) as ChatEvent);
+          }
+        }
+      }
+    } catch (e) {
+      onEvent({ type: "error", detail: e instanceof Error ? e.message : "Network error" });
+    } finally {
+      await qc.invalidateQueries({ queryKey: ["org", orgId, "chat"] });
+    }
+  };
 }

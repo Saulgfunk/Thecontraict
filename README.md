@@ -65,14 +65,25 @@ CI runs all of these on every pull request (`.github/workflows/ci.yml`).
 nestable), members and roles, tenant isolation with PostgreSQL Row-Level Security, audit
 log, deterministic deadline engine with a calculator in the UI.
 
-**Phase 1 (in progress):**
+**Phase 1 (MVP):**
 
-- Done: contract upload (PDF, Word, scanned PDFs), clause segmentation, AI extraction
-  with Claude (terms, notice periods and key dates, payment terms — each citing its
-  clauses), review screen with side-by-side clause viewer, deadline calculation from the
-  extracted rules (renewals, business days, holidays, deemed receipt), payment schedules,
-  organization-wide deadlines view.
-- Next: email reminders and digests, calendar (iCal) feed, AI chat with citations.
+- Contract upload (PDF, Word, scanned PDFs), clause segmentation, AI extraction with
+  Claude (terms, notice periods and key dates, payment terms — each citing its clauses).
+- Review screen with side-by-side clause viewer; deadline calculation from the extracted
+  rules (renewals, business days, holidays, deemed receipt); payment schedules.
+- Deadlines view across workspaces; reminders (in-app + email) on a configurable
+  schedule to each contract's owner; weekly digest; private iCal calendar feed.
+- AI chat per contract and per workspace, with answers citing the exact clauses.
 
-AI analysis needs `ANTHROPIC_API_KEY` in `services/api/.env`. Without a worker running,
-set `TASKS_EAGER=true` so uploads are processed by the API process itself.
+AI analysis and chat need `ANTHROPIC_API_KEY` in `services/api/.env`. Without a worker
+running, set `TASKS_EAGER=true` so uploads are processed by the API process itself.
+Reminders and digests run on Celery beat:
+
+```bash
+cd services/api
+uv run celery -A app.workers.celery_app worker -l info
+uv run celery -A app.workers.celery_app beat -l info
+```
+
+Emails are printed to the log by default (`EMAIL_BACKEND=console`); set `smtp` or
+`postmark` in `services/api/.env` to send them.

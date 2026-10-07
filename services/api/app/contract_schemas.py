@@ -163,6 +163,7 @@ class ContractSummary(ORMModel):
     effective_date: date | None
     end_date: date | None
     auto_renews: bool | None
+    owner_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
     documents: list[DocumentOut]
@@ -221,6 +222,9 @@ FIELD_OF_COLUMN = {
 
 
 class ContractUpdate(BaseModel):
+    owner_id: uuid.UUID | None = Field(
+        default=None, description="Who receives this contract's reminders."
+    )
     title: str | None = Field(default=None, min_length=1, max_length=500)
     status: ContractStatus | None = None
     contract_type: str | None = Field(default=None, max_length=100)

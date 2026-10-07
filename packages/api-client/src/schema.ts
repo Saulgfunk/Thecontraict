@@ -413,6 +413,157 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notifications */
+        get: operations["list_notifications_organizations__org_id__notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Read */
+        post: operations["mark_read_organizations__org_id__notifications_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences_organizations__org_id__me_preferences_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Preferences */
+        patch: operations["update_preferences_organizations__org_id__me_preferences_patch"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/reminder-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reminder Settings */
+        get: operations["get_reminder_settings_organizations__org_id__reminder_settings_get"];
+        /** Update Reminder Settings */
+        put: operations["update_reminder_settings_organizations__org_id__reminder_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/calendar-feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Calendar Feed */
+        get: operations["get_calendar_feed_organizations__org_id__calendar_feed_get"];
+        put?: never;
+        /**
+         * Create Calendar Feed
+         * @description Create (or replace) the user's private feed. The URL is shown only once; creating a
+         *     new one invalidates the old URL.
+         */
+        post: operations["create_calendar_feed_organizations__org_id__calendar_feed_post"];
+        /** Delete Calendar Feed */
+        delete: operations["delete_calendar_feed_organizations__org_id__calendar_feed_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/chat/threads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Threads */
+        get: operations["list_threads_organizations__org_id__chat_threads_get"];
+        put?: never;
+        /** Create Thread */
+        post: operations["create_thread_organizations__org_id__chat_threads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/chat/threads/{thread_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Thread */
+        get: operations["get_thread_organizations__org_id__chat_threads__thread_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Thread */
+        delete: operations["delete_thread_organizations__org_id__chat_threads__thread_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/chat/threads/{thread_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Message
+         * @description Ask a question. Streams Server-Sent Events: ``{"type": "delta", "text"}`` while the
+         *     answer is written, then ``{"type": "message", "message"}`` with citations, or
+         *     ``{"type": "error", "detail"}``.
+         */
+        post: operations["send_message_organizations__org_id__chat_threads__thread_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -468,6 +619,20 @@ export interface components {
             /** Title */
             title?: string | null;
         };
+        /** CalendarFeedOut */
+        CalendarFeedOut: {
+            /** Active */
+            active: boolean;
+            /** Created At */
+            created_at?: string | null;
+            /** Last Accessed At */
+            last_accessed_at?: string | null;
+            /**
+             * Url
+             * @description Only returned when the feed is created.
+             */
+            url?: string | null;
+        };
         /** CalendarIn */
         CalendarIn: {
             /** Country */
@@ -483,6 +648,20 @@ export interface components {
              *     ]
              */
             weekend?: number[];
+        };
+        /** Citation */
+        Citation: {
+            /**
+             * Contract Id
+             * Format: uuid
+             */
+            contract_id: string;
+            /** Contract Title */
+            contract_title: string;
+            /** Clause Refs */
+            clause_refs: string[];
+            /** Cited Text */
+            cited_text: string;
         };
         /** ClauseOut */
         ClauseOut: {
@@ -529,6 +708,8 @@ export interface components {
             end_date: string | null;
             /** Auto Renews */
             auto_renews: boolean | null;
+            /** Owner Id */
+            owner_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -614,6 +795,8 @@ export interface components {
             end_date: string | null;
             /** Auto Renews */
             auto_renews: boolean | null;
+            /** Owner Id */
+            owner_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -635,6 +818,11 @@ export interface components {
         };
         /** ContractUpdate */
         ContractUpdate: {
+            /**
+             * Owner Id
+             * @description Who receives this contract's reminders.
+             */
+            owner_id?: string | null;
             /** Title */
             title?: string | null;
             status?: components["schemas"]["ContractStatus"] | null;
@@ -881,11 +1069,53 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** MarkRead */
+        MarkRead: {
+            /**
+             * Ids
+             * @description Omit to mark all as read.
+             */
+            ids?: string[] | null;
+        };
         /** MeOut */
         MeOut: {
             user: components["schemas"]["UserOut"];
             /** Organizations */
             organizations: components["schemas"]["MyOrganization"][];
+        };
+        /** MessageBlock */
+        MessageBlock: {
+            /** Text */
+            text: string;
+            /**
+             * Citations
+             * @default []
+             */
+            citations?: components["schemas"]["Citation"][];
+        };
+        /** MessageCreate */
+        MessageCreate: {
+            /** Text */
+            text: string;
+        };
+        /** MessageOut */
+        MessageOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Role */
+            role: string;
+            /** Blocks */
+            blocks: components["schemas"]["MessageBlock"][];
+            /** Error */
+            error: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** MyOrganization */
         MyOrganization: {
@@ -929,6 +1159,36 @@ export interface components {
             days_left: number;
             /** Derivation */
             derivation: string[];
+        };
+        /** NotificationList */
+        NotificationList: {
+            /** Items */
+            items: components["schemas"]["NotificationOut"][];
+            /** Unread Count */
+            unread_count: number;
+        };
+        /** NotificationOut */
+        NotificationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string | null;
+            /** Link */
+            link: string | null;
+            /** Read At */
+            read_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * OffsetDirection
@@ -1106,6 +1366,30 @@ export interface components {
          * @enum {string}
          */
         PeriodUnit: "days" | "weeks" | "months" | "years";
+        /** Preferences */
+        Preferences: {
+            /** Email Reminders */
+            email_reminders: boolean;
+            /** Weekly Digest */
+            weekly_digest: boolean;
+        };
+        /** PreferencesUpdate */
+        PreferencesUpdate: {
+            /** Email Reminders */
+            email_reminders?: boolean | null;
+            /** Weekly Digest */
+            weekly_digest?: boolean | null;
+        };
+        /** ReminderSettings */
+        ReminderSettings: {
+            /**
+             * Reminder Days
+             * @description Days before each kind of deadline to send reminders (0 = on the day).
+             */
+            reminder_days: {
+                [key: string]: number[];
+            };
+        };
         /**
          * ReviewStatus
          * @enum {string}
@@ -1131,6 +1415,72 @@ export interface components {
              * Format: date
              */
             end: string;
+        };
+        /** ThreadCreate */
+        ThreadCreate: {
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Contract Id */
+            contract_id?: string | null;
+        };
+        /** ThreadDetail */
+        ThreadDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Contract Id */
+            contract_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["MessageOut"][];
+        };
+        /** ThreadOut */
+        ThreadOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Contract Id */
+            contract_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * Unit
@@ -2437,6 +2787,505 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoticePreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notifications_organizations__org_id__notifications_get: {
+        parameters: {
+            query?: {
+                unread_only?: boolean;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_read_organizations__org_id__notifications_read_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkRead"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_preferences_organizations__org_id__me_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_preferences_organizations__org_id__me_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencesUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reminder_settings_organizations__org_id__reminder_settings_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_reminder_settings_organizations__org_id__reminder_settings_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReminderSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calendar_feed_organizations__org_id__calendar_feed_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarFeedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_calendar_feed_organizations__org_id__calendar_feed_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarFeedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_calendar_feed_organizations__org_id__calendar_feed_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_threads_organizations__org_id__chat_threads_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                contract_id?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_thread_organizations__org_id__chat_threads_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThreadCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_thread_organizations__org_id__chat_threads__thread_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                thread_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThreadDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_thread_organizations__org_id__chat_threads__thread_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                thread_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_organizations__org_id__chat_threads__thread_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                thread_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
                 };
             };
             /** @description Validation Error */
