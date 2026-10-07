@@ -1,6 +1,14 @@
 "use client";
 
-import { Building2, Calculator, History, LayoutDashboard, LogOut, Users } from "lucide-react";
+import {
+  Building2,
+  Calculator,
+  CalendarClock,
+  History,
+  LayoutDashboard,
+  LogOut,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -48,6 +56,7 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
   const base = `/app/${orgId}`;
   const nav = [
     { href: base, label: "Dashboard", icon: LayoutDashboard, exact: true },
+    { href: `${base}/deadlines`, label: "Deadlines", icon: CalendarClock },
     { href: `${base}/tools/deadline-calculator`, label: "Deadline calculator", icon: Calculator },
     { href: `${base}/members`, label: "Members", icon: Users },
     ...(isAdmin ? [{ href: `${base}/audit`, label: "Audit log", icon: History }] : []),

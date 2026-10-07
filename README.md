@@ -61,10 +61,18 @@ CI runs all of these on every pull request (`.github/workflows/ci.yml`).
 
 ## Status
 
-**Phase 0 (foundations) done:** organizations, workspaces (client / entity / department,
+**Phase 0 (foundations):** organizations, workspaces (client / entity / department,
 nestable), members and roles, tenant isolation with PostgreSQL Row-Level Security, audit
-log, deterministic deadline engine (business days, public holidays, auto-renewals,
-deemed receipt) with a calculator in the UI.
+log, deterministic deadline engine with a calculator in the UI.
 
-**Next (Phase 1):** contract upload, parsing/OCR, AI extraction with clause citations,
-review screen, deadlines and reminders. See [docs/roadmap.md](docs/roadmap.md).
+**Phase 1 (in progress):**
+
+- Done: contract upload (PDF, Word, scanned PDFs), clause segmentation, AI extraction
+  with Claude (terms, notice periods and key dates, payment terms — each citing its
+  clauses), review screen with side-by-side clause viewer, deadline calculation from the
+  extracted rules (renewals, business days, holidays, deemed receipt), payment schedules,
+  organization-wide deadlines view.
+- Next: email reminders and digests, calendar (iCal) feed, AI chat with citations.
+
+AI analysis needs `ANTHROPIC_API_KEY` in `services/api/.env`. Without a worker running,
+set `TASKS_EAGER=true` so uploads are processed by the API process itself.

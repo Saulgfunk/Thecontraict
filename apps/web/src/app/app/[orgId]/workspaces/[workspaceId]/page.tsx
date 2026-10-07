@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
+import { ContractsPanel } from "@/components/app/contracts-panel";
 import { useCurrentOrg } from "@/components/app/use-org";
 import {
   Badge,
@@ -99,12 +100,13 @@ export default function WorkspacePage() {
         <Card
           className="lg:col-span-2"
           title="Contracts"
-          description="Uploaded contracts and their key dates."
+          description="Only members of this workspace and organization admins can see them."
         >
-          <p className="text-muted text-sm">
-            Contract upload and AI analysis are the next milestone. Contracts added to this
-            workspace will only be visible to its members and organization admins.
-          </p>
+          <ContractsPanel
+            orgId={orgId}
+            workspaceId={workspaceId}
+            canEdit={ws.my_role === "admin" || ws.my_role === "editor"}
+          />
         </Card>
 
         <Card

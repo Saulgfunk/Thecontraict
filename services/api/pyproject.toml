@@ -6,14 +6,19 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",
+    "anthropic>=1.11.0",
+    "boto3>=1.43.108",
     "celery>=5.6.3",
     "email-validator>=2.3.0",
     "fastapi>=0.142.2",
     "holidays>=0.106",
+    "pdfplumber>=0.11.10",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",
     "pyjwt[crypto]>=2.15.1",
     "python-dateutil>=2.9.0.post0",
+    "python-docx>=1.2.0",
+    "python-multipart>=0.0.32",
     "redis>=8.1.0",
     "sqlalchemy>=2",
     "uvicorn[standard]>=0.54.0",
@@ -21,6 +26,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "fpdf2>=2.8.9",
     "httpx2>=2.13.1",
     "mypy>=2.4.0",
     "pytest>=9.1.1",
@@ -36,7 +42,7 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header", "fastapi.File", "fastapi.Form"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

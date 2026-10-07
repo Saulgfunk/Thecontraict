@@ -5,6 +5,10 @@ os.environ.setdefault(
 )
 os.environ["ENVIRONMENT"] = "test"
 os.environ["AUTH_MODE"] = "dev"
+os.environ["TASKS_EAGER"] = "true"
+os.environ["STORAGE_BACKEND"] = "local"
+os.environ["LOCAL_STORAGE_DIR"] = os.path.join(os.path.dirname(__file__), "..", ".storage-test")
+os.environ["ANTHROPIC_API_KEY"] = ""
 
 from collections.abc import Callable, Iterator  # noqa: E402
 
@@ -18,6 +22,7 @@ from app.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = (
+    "deadlines, payment_terms, date_rules, extraction_runs, clauses, documents, contracts, "
     "audit_events, workspace_memberships, workspaces, organization_memberships, "
     "organizations, users"
 )

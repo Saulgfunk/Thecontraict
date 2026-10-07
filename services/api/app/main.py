@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from app.config import get_settings
 from app.db import engine
-from app.routers import deadlines, organizations, workspaces
+from app.routers import contracts, deadlines, organizations, workspaces
 
 
 def create_app() -> FastAPI:
@@ -19,6 +19,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(organizations.router)
     app.include_router(workspaces.router)
+    app.include_router(contracts.router)
     app.include_router(deadlines.router)
 
     @app.get("/health", tags=["system"])

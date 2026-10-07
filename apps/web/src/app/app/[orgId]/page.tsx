@@ -4,6 +4,7 @@ import { FolderOpen, Plus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { DeadlineList } from "@/components/app/deadline-list";
 import { useCurrentOrg } from "@/components/app/use-org";
 import {
   Badge,
@@ -16,7 +17,7 @@ import {
   PageHeader,
   Select,
 } from "@/components/ui";
-import { useCreateWorkspace, useWorkspaces, type Schemas } from "@/lib/api";
+import { useCreateWorkspace, useDeadlines, useWorkspaces, type Schemas } from "@/lib/api";
 import { DEFAULT_WORKSPACE_KIND, WORKSPACE_KIND_LABELS, WORKSPACE_ROLE_LABELS } from "@/lib/labels";
 import { errorMessage } from "@/lib/utils";
 
@@ -86,6 +87,41 @@ function CreateWorkspaceForm({ onDone }: { onDone: () => void }) {
         <ErrorText>{errorMessage(create.error)}</ErrorText>
       </div>
     </form>
+  );
+}
+
+function UpcomingDeadlines({ orgId }: { orgId: string }) {
+  const [in90] = useState(() => new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10));
+  const deadlines = useDeadlines(orgId, { to: in90 });
+  return (
+    <Card
+      title="Next 90 days"
+      description="Notice, renewal and payment dates."
+      actions={
+        <Link href={`/app/${orgId}/deadlines`} className="text-primary text-sm hover:underline">
+          All
+        </Link>
+      }
+    >
+      {deadlines.isPending ? (
+        <Loading />
+      ) : deadlines.error ? (
+        <ErrorText>{errorMessage(deadlines.error)}</ErrorText>
+      ) : deadlines.data.length === 0 ? (
+        <p className="text-muted text-sm">
+          Nothing due. Upload contracts to a workspace to see their deadlines here, or try the{" "}
+          <Link
+            href={`/app/${orgId}/tools/deadline-calculator`}
+            className="text-primary hover:underline"
+          >
+            deadline calculator
+          </Link>
+          .
+        </p>
+      ) : (
+        <DeadlineList orgId={orgId} items={deadlines.data.slice(0, 12)} compact />
+      )}
+    </Card>
   );
 }
 
@@ -161,18 +197,7 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card title="Upcoming deadlines" description="Notice, renewal and invoice dates.">
-          <p className="text-muted text-sm">
-            Deadlines will appear here once contracts are uploaded and analysed. Meanwhile, try the{" "}
-            <Link
-              href={`/app/${orgId}/tools/deadline-calculator`}
-              className="text-primary hover:underline"
-            >
-              deadline calculator
-            </Link>
-            .
-          </p>
-        </Card>
+        <UpcomingDeadlines orgId={orgId} />
       </div>
     </>
   );

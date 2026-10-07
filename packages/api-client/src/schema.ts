@@ -180,6 +180,222 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/workspaces/{workspace_id}/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Contracts */
+        get: operations["list_contracts_organizations__org_id__workspaces__workspace_id__contracts_get"];
+        put?: never;
+        /** Upload Contract */
+        post: operations["upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Contract */
+        get: operations["get_contract_organizations__org_id__contracts__contract_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Contract */
+        delete: operations["delete_contract_organizations__org_id__contracts__contract_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Contract */
+        patch: operations["update_contract_organizations__org_id__contracts__contract_id__patch"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}/confirm-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Terms
+         * @description Confirm the contract-level terms (dates, term, renewal) as reviewed.
+         */
+        post: operations["confirm_terms_organizations__org_id__contracts__contract_id__confirm_terms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}/reprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reprocess Contract
+         * @description Run the AI analysis again. Values a user has reviewed are kept.
+         */
+        post: operations["reprocess_contract_organizations__org_id__contracts__contract_id__reprocess_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/documents/{document_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Document */
+        get: operations["download_document_organizations__org_id__documents__document_id__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/documents/{document_id}/clauses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Clauses */
+        get: operations["list_clauses_organizations__org_id__documents__document_id__clauses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}/date-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Date Rule */
+        post: operations["create_date_rule_organizations__org_id__contracts__contract_id__date_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/date-rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Date Rule */
+        patch: operations["update_date_rule_organizations__org_id__date_rules__rule_id__patch"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}/payment-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Payment Term */
+        post: operations["create_payment_term_organizations__org_id__contracts__contract_id__payment_terms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/payment-terms/{term_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Payment Term */
+        patch: operations["update_payment_term_organizations__org_id__payment_terms__term_id__patch"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/deadlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Deadlines
+         * @description Deadlines across every workspace the user can access.
+         */
+        get: operations["list_deadlines_organizations__org_id__deadlines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/deadlines/{deadline_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Deadline */
+        patch: operations["update_deadline_organizations__org_id__deadlines__deadline_id__patch"];
+        trace?: never;
+    };
     "/deadlines/notice-preview": {
         parameters: {
             query?: never;
@@ -245,6 +461,13 @@ export interface components {
              */
             at: string;
         };
+        /** Body_upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post */
+        Body_upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post: {
+            /** File */
+            file: string;
+            /** Title */
+            title?: string | null;
+        };
         /** CalendarIn */
         CalendarIn: {
             /** Country */
@@ -261,11 +484,398 @@ export interface components {
              */
             weekend?: number[];
         };
+        /** ClauseOut */
+        ClauseOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ref */
+            ref: string;
+            /** Number */
+            number: string | null;
+            /** Heading */
+            heading: string | null;
+            /** Text */
+            text: string;
+            /** Page Start */
+            page_start: number | null;
+            /** Page End */
+            page_end: number | null;
+        };
+        /** ContractDetail */
+        ContractDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["ContractStatus"];
+            /** Contract Type */
+            contract_type: string | null;
+            /** Counterparty Name */
+            counterparty_name: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Auto Renews */
+            auto_renews: boolean | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Documents */
+            documents: components["schemas"]["DocumentOut"][];
+            next_deadline?: components["schemas"]["DeadlineOut"] | null;
+            /**
+             * Pending Review
+             * @default 0
+             */
+            pending_review?: number;
+            /** Summary */
+            summary: string | null;
+            /** Parties */
+            parties: {
+                [key: string]: unknown;
+            }[];
+            /** Initial Term Amount */
+            initial_term_amount: number | null;
+            initial_term_unit: components["schemas"]["PeriodUnit"] | null;
+            /** Renewal Term Amount */
+            renewal_term_amount: number | null;
+            renewal_term_unit: components["schemas"]["PeriodUnit"] | null;
+            /** Governing Law */
+            governing_law: string | null;
+            /** Holiday Country */
+            holiday_country: string | null;
+            /** Holiday Subdivision */
+            holiday_subdivision: string | null;
+            /** Currency */
+            currency: string | null;
+            /** Contract Value */
+            contract_value: string | null;
+            /** Notice Details */
+            notice_details: string | null;
+            /** Field Sources */
+            field_sources: {
+                [key: string]: unknown;
+            };
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /** Date Rules */
+            date_rules: components["schemas"]["DateRuleOut"][];
+            /** Payment Terms */
+            payment_terms: components["schemas"]["PaymentTermOut"][];
+            /** Deadlines */
+            deadlines: components["schemas"]["DeadlineOut"][];
+        };
+        /**
+         * ContractStatus
+         * @enum {string}
+         */
+        ContractStatus: "processing" | "needs_review" | "active" | "expired" | "terminated";
+        /** ContractSummary */
+        ContractSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Title */
+            title: string;
+            status: components["schemas"]["ContractStatus"];
+            /** Contract Type */
+            contract_type: string | null;
+            /** Counterparty Name */
+            counterparty_name: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Auto Renews */
+            auto_renews: boolean | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Documents */
+            documents: components["schemas"]["DocumentOut"][];
+            next_deadline?: components["schemas"]["DeadlineOut"] | null;
+            /**
+             * Pending Review
+             * @default 0
+             */
+            pending_review?: number;
+        };
+        /** ContractUpdate */
+        ContractUpdate: {
+            /** Title */
+            title?: string | null;
+            status?: components["schemas"]["ContractStatus"] | null;
+            /** Contract Type */
+            contract_type?: string | null;
+            /** Counterparty Name */
+            counterparty_name?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Initial Term Amount */
+            initial_term_amount?: number | null;
+            initial_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Auto Renews */
+            auto_renews?: boolean | null;
+            /** Renewal Term Amount */
+            renewal_term_amount?: number | null;
+            renewal_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Governing Law */
+            governing_law?: string | null;
+            /** Holiday Country */
+            holiday_country?: string | null;
+            /** Holiday Subdivision */
+            holiday_subdivision?: string | null;
+            /** Currency */
+            currency?: string | null;
+            /** Contract Value */
+            contract_value?: number | string | null;
+            /** Notice Details */
+            notice_details?: string | null;
+        };
+        /**
+         * DateAnchor
+         * @enum {string}
+         */
+        DateAnchor: "fixed_date" | "effective_date" | "term_start" | "term_end";
+        /** DateRuleIn */
+        DateRuleIn: {
+            /** @default other */
+            rule_type?: components["schemas"]["DateRuleType"];
+            /** Label */
+            label: string;
+            anchor: components["schemas"]["DateAnchor"];
+            /** Fixed Date */
+            fixed_date?: string | null;
+            /** Offset Amount */
+            offset_amount?: number | null;
+            offset_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** @default calendar */
+            offset_basis?: components["schemas"]["DayBasis"];
+            /** @default before */
+            direction?: components["schemas"]["OffsetDirection"];
+            /** Delivery Amount */
+            delivery_amount?: number | null;
+        };
+        /** DateRuleOut */
+        DateRuleOut: {
+            /** Source Clause Refs */
+            source_clause_refs: string[];
+            /** Quote */
+            quote: string | null;
+            /** Confidence */
+            confidence: number | null;
+            review_status: components["schemas"]["ReviewStatus"];
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            rule_type: components["schemas"]["DateRuleType"];
+            /** Label */
+            label: string;
+            anchor: components["schemas"]["DateAnchor"];
+            /** Fixed Date */
+            fixed_date: string | null;
+            /** Offset Amount */
+            offset_amount: number | null;
+            offset_unit: components["schemas"]["PeriodUnit"] | null;
+            offset_basis: components["schemas"]["DayBasis"];
+            direction: components["schemas"]["OffsetDirection"];
+            /** Delivery Amount */
+            delivery_amount: number | null;
+            /** Compute Error */
+            compute_error: string | null;
+        };
+        /**
+         * DateRuleType
+         * @enum {string}
+         */
+        DateRuleType: "non_renewal_notice" | "termination_notice" | "option_exercise" | "price_review" | "warranty_end" | "insurance_expiry" | "guarantee_expiry" | "lock_in_end" | "other";
+        /**
+         * DateRuleUpdate
+         * @description Either a review decision, edits, or both. Edits imply status 'edited'.
+         */
+        DateRuleUpdate: {
+            review_status?: components["schemas"]["ReviewStatus"] | null;
+            rule_type?: components["schemas"]["DateRuleType"] | null;
+            /** Label */
+            label?: string | null;
+            anchor?: components["schemas"]["DateAnchor"] | null;
+            /** Fixed Date */
+            fixed_date?: string | null;
+            /** Offset Amount */
+            offset_amount?: number | null;
+            offset_unit?: components["schemas"]["PeriodUnit"] | null;
+            offset_basis?: components["schemas"]["DayBasis"] | null;
+            direction?: components["schemas"]["OffsetDirection"] | null;
+            /** Delivery Amount */
+            delivery_amount?: number | null;
+        };
         /**
          * DayBasis
          * @enum {string}
          */
         DayBasis: "calendar" | "business";
+        /**
+         * DeadlineKind
+         * @enum {string}
+         */
+        DeadlineKind: "term_end" | "notice" | "option" | "price_review" | "payment" | "other";
+        /** DeadlineOut */
+        DeadlineOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Contract Id
+             * Format: uuid
+             */
+            contract_id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Date Rule Id */
+            date_rule_id: string | null;
+            /** Payment Term Id */
+            payment_term_id: string | null;
+            kind: components["schemas"]["DeadlineKind"];
+            /** Label */
+            label: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Derivation */
+            derivation: string[];
+            /** Confirmed */
+            confirmed: boolean;
+            status: components["schemas"]["DeadlineStatus"];
+        };
+        /**
+         * DeadlineStatus
+         * @enum {string}
+         */
+        DeadlineStatus: "open" | "done" | "dismissed";
+        /** DeadlineUpdate */
+        DeadlineUpdate: {
+            status: components["schemas"]["DeadlineStatus"];
+        };
+        /** DeadlineWithContract */
+        DeadlineWithContract: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Contract Id
+             * Format: uuid
+             */
+            contract_id: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Date Rule Id */
+            date_rule_id: string | null;
+            /** Payment Term Id */
+            payment_term_id: string | null;
+            kind: components["schemas"]["DeadlineKind"];
+            /** Label */
+            label: string;
+            /**
+             * Due Date
+             * Format: date
+             */
+            due_date: string;
+            /** Derivation */
+            derivation: string[];
+            /** Confirmed */
+            confirmed: boolean;
+            status: components["schemas"]["DeadlineStatus"];
+            /** Contract Title */
+            contract_title: string;
+            /** Counterparty Name */
+            counterparty_name: string | null;
+            /** Workspace Name */
+            workspace_name: string;
+        };
+        /** DocumentOut */
+        DocumentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            status: components["schemas"]["DocumentStatus"];
+            /** Error */
+            error: string | null;
+            /** Page Count */
+            page_count: number | null;
+            /** Text Source */
+            text_source: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Processed At */
+            processed_at: string | null;
+        };
+        /**
+         * DocumentStatus
+         * @enum {string}
+         */
+        DocumentStatus: "uploaded" | "processing" | "ready" | "failed";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -320,6 +930,11 @@ export interface components {
             /** Derivation */
             derivation: string[];
         };
+        /**
+         * OffsetDirection
+         * @enum {string}
+         */
+        OffsetDirection: "before" | "after";
         /** OrgMemberCreate */
         OrgMemberCreate: {
             /**
@@ -401,6 +1016,83 @@ export interface components {
             /** Default Country */
             default_country?: string | null;
         };
+        /**
+         * PaymentDirection
+         * @enum {string}
+         */
+        PaymentDirection: "receivable" | "payable" | "unknown";
+        /**
+         * PaymentFrequency
+         * @enum {string}
+         */
+        PaymentFrequency: "one_off" | "monthly" | "quarterly" | "semi_annual" | "annual" | "other";
+        /** PaymentTermIn */
+        PaymentTermIn: {
+            /** Description */
+            description: string;
+            /** @default unknown */
+            direction?: components["schemas"]["PaymentDirection"];
+            /** Amount */
+            amount?: number | string | null;
+            /** Currency */
+            currency?: string | null;
+            frequency: components["schemas"]["PaymentFrequency"];
+            /** First Due Date */
+            first_due_date?: string | null;
+            /** Payment Days */
+            payment_days?: number | null;
+            /** Escalation */
+            escalation?: string | null;
+        };
+        /** PaymentTermOut */
+        PaymentTermOut: {
+            /** Source Clause Refs */
+            source_clause_refs: string[];
+            /** Quote */
+            quote: string | null;
+            /** Confidence */
+            confidence: number | null;
+            review_status: components["schemas"]["ReviewStatus"];
+            /** Reviewed At */
+            reviewed_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Description */
+            description: string;
+            direction: components["schemas"]["PaymentDirection"];
+            /** Amount */
+            amount: string | null;
+            /** Currency */
+            currency: string | null;
+            frequency: components["schemas"]["PaymentFrequency"];
+            /** First Due Date */
+            first_due_date: string | null;
+            /** Payment Days */
+            payment_days: number | null;
+            /** Escalation */
+            escalation: string | null;
+        };
+        /** PaymentTermUpdate */
+        PaymentTermUpdate: {
+            review_status?: components["schemas"]["ReviewStatus"] | null;
+            /** Description */
+            description?: string | null;
+            direction?: components["schemas"]["PaymentDirection"] | null;
+            /** Amount */
+            amount?: number | string | null;
+            /** Currency */
+            currency?: string | null;
+            frequency?: components["schemas"]["PaymentFrequency"] | null;
+            /** First Due Date */
+            first_due_date?: string | null;
+            /** Payment Days */
+            payment_days?: number | null;
+            /** Escalation */
+            escalation?: string | null;
+        };
         /** PeriodIn */
         PeriodIn: {
             /** Amount */
@@ -409,6 +1101,16 @@ export interface components {
             /** @default calendar */
             basis?: components["schemas"]["DayBasis"];
         };
+        /**
+         * PeriodUnit
+         * @enum {string}
+         */
+        PeriodUnit: "days" | "weeks" | "months" | "years";
+        /**
+         * ReviewStatus
+         * @enum {string}
+         */
+        ReviewStatus: "ai_suggested" | "confirmed" | "edited" | "rejected";
         /**
          * Roll
          * @description How to adjust a date that falls on a non-business day.
@@ -1144,6 +1846,562 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_contracts_organizations__org_id__workspaces__workspace_id__contracts_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_contract_organizations__org_id__contracts__contract_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_contract_organizations__org_id__contracts__contract_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_contract_organizations__org_id__contracts__contract_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_terms_organizations__org_id__contracts__contract_id__confirm_terms_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reprocess_contract_organizations__org_id__contracts__contract_id__reprocess_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_organizations__org_id__documents__document_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                document_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_clauses_organizations__org_id__documents__document_id__clauses_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                document_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClauseOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_date_rule_organizations__org_id__contracts__contract_id__date_rules_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DateRuleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateRuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_date_rule_organizations__org_id__date_rules__rule_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                rule_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DateRuleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DateRuleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_payment_term_organizations__org_id__contracts__contract_id__payment_terms_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentTermIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentTermOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_payment_term_organizations__org_id__payment_terms__term_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                term_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentTermUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentTermOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_deadlines_organizations__org_id__deadlines_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                from?: string | null;
+                to?: string | null;
+                include_closed?: boolean;
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeadlineWithContract"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_deadline_organizations__org_id__deadlines__deadline_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                deadline_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeadlineUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeadlineOut"];
+                };
             };
             /** @description Validation Error */
             422: {
