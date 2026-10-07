@@ -1,0 +1,69 @@
+{
+  "_comment": "Answer key for the sample contracts. Rules match on type, offset (normalised: years->months, weeks->days), direction and anchor; a list means any of the values is accepted. Items with \"required\": false are reported but not scored.",
+  "saas_subscription": {
+    "fields": {
+      "effective_date": "2024-03-15",
+      "initial_term": [36, "months"],
+      "auto_renews": true,
+      "renewal_term": [12, "months"],
+      "governing_law~": "Germany",
+      "currency": "EUR"
+    },
+    "rules": [
+      {"type": "non_renewal_notice", "anchor": "term_end", "offset": [60, "days"], "direction": "before"},
+      {"type": "price_review", "required": false}
+    ],
+    "payments": [
+      {"frequency": "annual", "amount": 48000, "first_due_date": "2024-03-15", "payment_days": 30}
+    ]
+  },
+  "commercial_lease": {
+    "fields": {
+      "effective_date": "2023-07-01",
+      "initial_term": [60, "months"],
+      "auto_renews": false,
+      "end_date": "2028-06-30",
+      "governing_law~": "England",
+      "currency": "GBP"
+    },
+    "rules": [
+      {"type": "option_exercise", "anchor": ["term_end", "fixed_date:2028-06-30"], "offset": [6, "months"], "direction": "before"},
+      {"type": "price_review", "anchor": ["fixed_date:2026-07-01"], "offset": [0, "days"]},
+      {"type": "insurance_expiry", "anchor": ["fixed_date:2027-01-31"], "offset": [0, "days"]}
+    ],
+    "payments": [
+      {"frequency": "quarterly", "amount": 30000}
+    ]
+  },
+  "supply_agreement": {
+    "fields": {
+      "effective_date": "2025-01-10",
+      "initial_term": [12, "months"],
+      "auto_renews": true,
+      "renewal_term": [12, "months"],
+      "governing_law~": "New York",
+      "currency": "USD"
+    },
+    "rules": [
+      {"type": "non_renewal_notice", "anchor": "term_end", "offset": [90, "days"], "direction": "before", "deemed_receipt": 3},
+      {"type": ["termination_notice", "other"], "required": false},
+      {"type": ["price_review", "other"], "required": false},
+      {"type": ["warranty_end", "other"], "required": false}
+    ],
+    "payments": [
+      {"frequency": "monthly", "payment_days": 45}
+    ]
+  },
+  "mutual_nda": {
+    "fields": {
+      "effective_date": "2025-05-02",
+      "initial_term": [24, "months"],
+      "governing_law~": "Turkey"
+    },
+    "rules": [
+      {"type": ["termination_notice", "other"], "required": false},
+      {"type": "other", "required": false}
+    ],
+    "payments": []
+  }
+}

@@ -1,0 +1,32 @@
+SOFTWARE-AS-A-SERVICE SUBSCRIPTION AGREEMENT
+
+This Subscription Agreement (the "Agreement") is entered into by and between CloudLedger GmbH, a company registered in Berlin, Germany ("Provider"), and Northwind Holdings AG ("Customer").
+
+1. DEFINITIONS
+1.1 "Services" means the CloudLedger accounting platform described in Schedule 1.
+1.2 "Subscription Year" means each period of twelve (12) months starting on the Effective Date or an anniversary of it.
+
+2. TERM AND RENEWAL
+2.1 This Agreement takes effect on 15 March 2024 (the "Effective Date") and continues for an initial term of thirty-six (36) months.
+2.2 Upon expiry of the initial term, this Agreement shall automatically renew for successive renewal terms of twelve (12) months each, unless either party notifies the other in writing of its decision not to renew no later than sixty (60) days before the end of the then-current term.
+
+3. FEES AND PAYMENT
+3.1 Customer shall pay an annual subscription fee of EUR 48,000 (forty-eight thousand euros) per Subscription Year.
+3.2 Provider shall invoice the annual fee in advance on the Effective Date and on each anniversary of the Effective Date. Invoices are payable within thirty (30) days of the invoice date.
+3.3 With effect from the start of each renewal term, Provider may increase the fees in line with the German consumer price index (VPI), provided that any increase shall not exceed five percent (5%) per year. Provider shall give at least ninety (90) days' written notice of any increase.
+
+4. SERVICE LEVELS
+Provider shall make the Services available 99.5% of each calendar month, excluding scheduled maintenance.
+
+5. TERMINATION
+5.1 Either party may terminate this Agreement with immediate effect by written notice if the other party commits a material breach which is not remedied within thirty (30) days of written notice.
+5.2 Customer may not terminate this Agreement for convenience during the initial term.
+
+6. LIABILITY
+Each party's total liability under this Agreement in any Subscription Year is limited to the fees paid or payable in that Subscription Year.
+
+7. NOTICES
+All notices under this Agreement shall be in writing and sent by email to legal@cloudledger.example (Provider) and contracts@northwind.example (Customer), with a copy by registered mail to the registered office of the recipient.
+
+8. GOVERNING LAW
+This Agreement is governed by the laws of the Federal Republic of Germany. The courts of Berlin have exclusive jurisdiction.

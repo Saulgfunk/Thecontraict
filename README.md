@@ -75,7 +75,9 @@ log, deterministic deadline engine with a calculator in the UI.
   schedule to each contract's owner; weekly digest; private iCal calendar feed.
 - AI chat per contract and per workspace, with answers citing the exact clauses.
 
-AI analysis and chat need `ANTHROPIC_API_KEY` in `services/api/.env`. Without a worker
+AI analysis and chat need `ANTHROPIC_API_KEY` in `services/api/.env`. To try the AI on
+sample or real contracts without running the app, see
+[services/api/evals/README.md](services/api/evals/README.md). Without a worker
 running, set `TASKS_EAGER=true` so uploads are processed by the API process itself.
 Reminders and digests run on Celery beat:
 

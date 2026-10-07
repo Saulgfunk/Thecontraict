@@ -1,0 +1,23 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Mutual Non-Disclosure Agreement is made on 2 May 2025 between Anadolu Teknoloji A.S., Istanbul ("Company A") and Fjordline Analytics AS, Oslo ("Company B").
+
+1. PURPOSE
+The parties wish to explore a potential joint venture (the "Purpose") and will exchange confidential information for that Purpose.
+
+2. CONFIDENTIALITY
+Each party shall keep the other party's Confidential Information confidential and use it only for the Purpose.
+
+3. TERM
+3.1 This Agreement commences on the date above and remains in force for two (2) years.
+3.2 Either party may terminate this Agreement at any time by giving not less than thirty (30) days' written notice to the other party.
+3.3 The obligations in clause 2 survive termination or expiry of this Agreement for a period of three (3) years.
+
+4. RETURN OF INFORMATION
+Within ten (10) days of a written request, the receiving party shall return or destroy all Confidential Information.
+
+5. NO PAYMENT
+No fees are payable under this Agreement.
+
+6. GOVERNING LAW
+This Agreement is governed by the laws of the Republic of Turkey. The Istanbul courts have jurisdiction.

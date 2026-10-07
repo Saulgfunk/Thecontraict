@@ -212,16 +212,23 @@ class ClaudeExtractor:
         self.effort = effort
 
     def _parse[T: BaseModel](self, output: type[T], system: str, content: list) -> tuple[T, object]:
+        import anthropic
+        from pydantic import ValidationError
+
         # Streaming avoids HTTP timeouts on long documents. Server-side fallbacks re-run the
-        # request on a recommended model if a safety classifier declines it.
+        # request on a recommended model if a safety classifier declines it. We pass the
+        # schema ourselves (rather than the SDK's output_format) so that the stop reason is
+        # checked before parsing: a refused or truncated answer is not valid JSON.
         with self.client.beta.messages.stream(
             model=self.model,
             max_tokens=64000,
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
             system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
-            output_config={"effort": self.effort},  # type: ignore[arg-type]
-            output_format=output,
+            output_config={  # type: ignore[arg-type]
+                "effort": self.effort,
+                "format": {"type": "json_schema", "schema": anthropic.transform_schema(output)},
+            },
             messages=[{"role": "user", "content": content}],
         ) as stream:
             message = stream.get_final_message()
@@ -229,10 +236,11 @@ class ClaudeExtractor:
             raise ExtractionError("The AI model declined to process this document")
         if message.stop_reason == "max_tokens":
             raise ExtractionError("The document is too long to analyse in one pass")
-        parsed = message.parsed_output
-        if parsed is None:
-            raise ExtractionError("The AI response could not be parsed")
-        return parsed, message.usage
+        text = "".join(b.text for b in message.content if b.type == "text")
+        try:
+            return output.model_validate_json(text), message.usage
+        except ValidationError as exc:
+            raise ExtractionError("The AI response could not be parsed") from exc
 
     def extract(self, contract_xml: str, context: str) -> ExtractionOutput:
         extraction, usage = self._parse(
