@@ -2,12 +2,12 @@
 
 ## 1. Target users
 
-| Segment | Typical need | Product implication |
-|---|---|---|
-| **In-house legal teams** | Never miss a renewal/notice deadline; answer business questions about contracts fast | Deadline ownership, approvals, audit trail, playbook review |
-| **Holding companies** | Visibility across many subsidiaries/entities | Entity hierarchy, consolidated dashboards, per-entity access |
-| **Mid-size companies** (procurement, finance, ops) | Control auto-renewals and spend, invoice timing | Invoice/payment calendar, spend views, simple UX |
-| **Law firms with multiple clients** | Manage contracts *on behalf of* clients, strict separation between clients | Client workspaces, ethical walls, client-facing reports, optional client portal |
+| Segment                                            | Typical need                                                                         | Product implication                                                             |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **In-house legal teams**                           | Never miss a renewal/notice deadline; answer business questions about contracts fast | Deadline ownership, approvals, audit trail, playbook review                     |
+| **Holding companies**                              | Visibility across many subsidiaries/entities                                         | Entity hierarchy, consolidated dashboards, per-entity access                    |
+| **Mid-size companies** (procurement, finance, ops) | Control auto-renewals and spend, invoice timing                                      | Invoice/payment calendar, spend views, simple UX                                |
+| **Law firms with multiple clients**                | Manage contracts _on behalf of_ clients, strict separation between clients           | Client workspaces, ethical walls, client-facing reports, optional client portal |
 
 Common requirements across all segments: multi-user, role-based access, strong
 confidentiality, accurate dates with verifiable sources, worldwide (time zones,
@@ -29,12 +29,14 @@ Org admins get a consolidated cross-workspace view.
 ## 3. Feature set
 
 ### 3.1 Ingestion
+
 - Upload PDF (native and scanned → OCR), DOCX, images; bulk upload / zip import.
 - Email-in address per workspace (forward contracts and attachments).
 - Duplicate and version detection; link amendments to their parent contract.
 - Later: Google Drive, OneDrive/SharePoint, Box, Dropbox, DocuSign/Adobe Sign import.
 
 ### 3.2 AI extraction (with clause citations)
+
 - **Metadata:** parties, counterparty, contract type, effective date, term, value, currency,
   governing law, jurisdiction, signatories, notice address(es).
 - **Key dates & periods:** expiry, auto-renewal terms, notice of non-renewal, termination
@@ -54,6 +56,7 @@ Org admins get a consolidated cross-workspace view.
 - Amendments override the clauses they amend ("effective terms" view).
 
 ### 3.3 Deadlines & alerts
+
 - Countdown in days / weeks / months, colour-coded urgency.
 - Reminder schedules per deadline type (default e.g. 120/90/60/30/14/7/1 days) and per user.
 - Channels: in-app, email, mobile push (with mobile app), Slack/Teams (later), SMS (later).
@@ -66,6 +69,7 @@ Org admins get a consolidated cross-workspace view.
 - Weekly digest email per user and per workspace.
 
 ### 3.4 Invoicing & payments
+
 - Payment schedule generated from contract terms (receivable and payable).
 - Alerts for invoices to issue / expected invoices / payment due dates.
 - Price escalation calculator (fixed % and index-linked, e.g. CPI).
@@ -73,6 +77,7 @@ Org admins get a consolidated cross-workspace view.
   (Xero, QuickBooks, NetSuite, SAP); cash-flow forecast.
 
 ### 3.5 AI assistant (chat)
+
 - Ask about one contract, a contract family, a workspace, or (for admins) the whole portfolio.
 - Every answer cites the clauses it relies on (click → jump to highlighted text).
 - Says explicitly when the documents don't answer the question.
@@ -84,6 +89,7 @@ Org admins get a consolidated cross-workspace view.
 - Later: playbook review of incoming contracts against the organization's standard positions.
 
 ### 3.6 Portfolio, search & reporting
+
 - Contract table with filters (type, counterparty, workspace, value, status, next deadline).
 - Full-text + semantic search.
 - Timeline/calendar view of all deadlines.
@@ -92,6 +98,7 @@ Org admins get a consolidated cross-workspace view.
 - Export to Excel/PDF; client-ready reports for law firms.
 
 ### 3.7 Administration, security & compliance
+
 - Roles: Org Admin, Workspace Admin, Editor, Viewer, (later) External Client Viewer.
 - SSO (SAML/OIDC) and MFA; SCIM provisioning (later).
 - Full audit log (views, edits, confirmations, exports).
@@ -117,6 +124,7 @@ Out of MVP: mobile app, integrations, invoice matching, playbooks, obligations t
 client portal, SSO/SCIM, non-English contracts.
 
 ## 5. Success metrics
+
 - Extraction accuracy on key dates (target ≥ 95% precision on confirmed set).
 - % of AI-suggested dates confirmed without edits.
 - Time from upload to confirmed deadlines.

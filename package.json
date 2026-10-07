@@ -1,0 +1,19 @@
+{
+  "name": "thecontraict",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "api:openapi": "cd services/api && uv run python scripts/export_openapi.py && pnpm --filter @contraict/api-client generate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "turbo": "^2"
+  },
+  "packageManager": "pnpm@10.28.0"
+}

@@ -15,29 +15,29 @@
 
 ## 2. Proposed stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| Monorepo | **pnpm + Turborepo** (JS apps/packages) with a Python `api/` service | One repo, shared types, single CI |
-| Web app | **Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui** | Mature, fast to build, good table/form/calendar ecosystem |
-| Data fetching | **TanStack Query** + generated OpenAPI client | Same client reused in mobile |
-| PDF viewer | **PDF.js** (react-pdf) with highlight overlays | Jump-to-clause citations |
-| Mobile (Phase 3) | **Expo / React Native** | Shares TS code; push notifications via Expo |
-| API | **Python 3.12 + FastAPI + Pydantic v2** | Typed, auto OpenAPI, async |
-| ORM / migrations | **SQLAlchemy 2.0 + Alembic** | Standard, supports RLS session vars |
-| Database | **PostgreSQL 16 + pgvector** | Relational core + vector search in one DB; Row-Level Security for tenancy |
-| Background jobs | **Celery + Redis** (Celery Beat for schedules) | Document pipeline, reminder scheduler, digests |
-| File storage | **S3-compatible object storage** (AWS S3; MinIO locally) | Encrypted, presigned uploads |
-| Document parsing | **Docling** (PDF/DOCX layout, tables, OCR) — cloud OCR (AWS Textract) as fallback for poor scans | Layout-aware clause segmentation with page coordinates |
-| LLM | **Anthropic Claude API** — `claude-opus-5-5` | Long-context document understanding, structured outputs, native citations |
-| Embeddings | **Voyage AI** (e.g. `voyage-law` family) → pgvector | Legal-tuned retrieval for chat across many contracts |
-| Date logic | `python-dateutil`, `holidays` package, custom rule engine | Deterministic, testable deadline computation |
-| Auth | **Clerk** (email, Google/Microsoft, MFA, orgs; SAML SSO on paid plans) — WorkOS as alternative if enterprise SSO/SCIM becomes primary | Works with Next.js and Expo; JWT verified by FastAPI |
-| Email | **Postmark** (transactional) | High deliverability for deadline alerts |
-| Calendar | iCal (`.ics`) feed per user (`icalendar` lib) | Works with every calendar app |
-| Observability | **Sentry** + OpenTelemetry; structured logs | Errors + tracing across API/workers |
-| Testing | pytest, Vitest, Playwright; **AI extraction eval set** | Regression-test extraction accuracy |
-| Infra | Docker; local `docker compose`; prod on **AWS** (ECS Fargate, RDS Postgres, ElastiCache, S3, KMS) via Terraform | Region-per-deployment possible later for data residency |
-| CI/CD | GitHub Actions | Lint, typecheck, tests, evals, deploy |
+| Layer            | Choice                                                                                                                                | Why                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Monorepo         | **pnpm + Turborepo** (JS apps/packages) with a Python `api/` service                                                                  | One repo, shared types, single CI                                         |
+| Web app          | **Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui**                                                                      | Mature, fast to build, good table/form/calendar ecosystem                 |
+| Data fetching    | **TanStack Query** + generated OpenAPI client                                                                                         | Same client reused in mobile                                              |
+| PDF viewer       | **PDF.js** (react-pdf) with highlight overlays                                                                                        | Jump-to-clause citations                                                  |
+| Mobile (Phase 3) | **Expo / React Native**                                                                                                               | Shares TS code; push notifications via Expo                               |
+| API              | **Python 3.12 + FastAPI + Pydantic v2**                                                                                               | Typed, auto OpenAPI, async                                                |
+| ORM / migrations | **SQLAlchemy 2.0 + Alembic**                                                                                                          | Standard, supports RLS session vars                                       |
+| Database         | **PostgreSQL 16 + pgvector**                                                                                                          | Relational core + vector search in one DB; Row-Level Security for tenancy |
+| Background jobs  | **Celery + Redis** (Celery Beat for schedules)                                                                                        | Document pipeline, reminder scheduler, digests                            |
+| File storage     | **S3-compatible object storage** (AWS S3; MinIO locally)                                                                              | Encrypted, presigned uploads                                              |
+| Document parsing | **Docling** (PDF/DOCX layout, tables, OCR) — cloud OCR (AWS Textract) as fallback for poor scans                                      | Layout-aware clause segmentation with page coordinates                    |
+| LLM              | **Anthropic Claude API** — `claude-opus-5-5`                                                                                          | Long-context document understanding, structured outputs, native citations |
+| Embeddings       | **Voyage AI** (e.g. `voyage-law` family) → pgvector                                                                                   | Legal-tuned retrieval for chat across many contracts                      |
+| Date logic       | `python-dateutil`, `holidays` package, custom rule engine                                                                             | Deterministic, testable deadline computation                              |
+| Auth             | **Clerk** (email, Google/Microsoft, MFA, orgs; SAML SSO on paid plans) — WorkOS as alternative if enterprise SSO/SCIM becomes primary | Works with Next.js and Expo; JWT verified by FastAPI                      |
+| Email            | **Postmark** (transactional)                                                                                                          | High deliverability for deadline alerts                                   |
+| Calendar         | iCal (`.ics`) feed per user (`icalendar` lib)                                                                                         | Works with every calendar app                                             |
+| Observability    | **Sentry** + OpenTelemetry; structured logs                                                                                           | Errors + tracing across API/workers                                       |
+| Testing          | pytest, Vitest, Playwright; **AI extraction eval set**                                                                                | Regression-test extraction accuracy                                       |
+| Infra            | Docker; local `docker compose`; prod on **AWS** (ECS Fargate, RDS Postgres, ElastiCache, S3, KMS) via Terraform                       | Region-per-deployment possible later for data residency                   |
+| CI/CD            | GitHub Actions                                                                                                                        | Lint, typecheck, tests, evals, deploy                                     |
 
 ## 3. System overview
 

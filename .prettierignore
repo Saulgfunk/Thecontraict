@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+packages/api-client/src/schema.ts
+packages/api-client/openapi.json
+services/
+.next/
