@@ -451,11 +451,11 @@ export function useUpdatePaymentTerm(orgId: string) {
 export function useUpdateDeadline(orgId: string) {
   return useContractMutation(
     orgId,
-    (api, { id, status }: { id: string; status: Schemas["DeadlineStatus"] }) =>
+    (api, { id, ...body }: { id: string } & Schemas["DeadlineUpdate"]) =>
       unwrap(
         api.PATCH("/organizations/{org_id}/deadlines/{deadline_id}", {
           params: { path: { org_id: orgId, deadline_id: id } },
-          body: { status },
+          body,
         }),
       ),
   );
@@ -658,6 +658,89 @@ export function useSendChatMessage(orgId: string) {
       onEvent({ type: "error", detail: e instanceof Error ? e.message : "Network error" });
     } finally {
       await qc.invalidateQueries({ queryKey: ["org", orgId, "chat"] });
+    }
+  };
+}
+
+// ---- Downloads and drafting ----
+
+/** Fetch a file with auth headers and save it via a temporary link. */
+export function useDownload(orgId: string) {
+  const auth = useAuthState();
+  return useMutation({
+    mutationFn: async ({
+      path,
+      filename,
+      body,
+    }: {
+      path: string;
+      filename: string;
+      body?: unknown;
+    }) => {
+      const res = await fetch(`${API_URL}/organizations/${orgId}${path}`, {
+        method: body ? "POST" : "GET",
+        headers: {
+          ...(body ? { "Content-Type": "application/json" } : {}),
+          ...(await auth.getHeaders()),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) throw new ApiError(res.status, "Download failed");
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    },
+  });
+}
+
+export type DraftEvent =
+  | { type: "delta"; text: string }
+  | { type: "done"; text: string; citations: Schemas["Citation"][] }
+  | { type: "error"; detail: string };
+
+async function readSse<T>(res: Response, onEvent: (e: T) => void) {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let split;
+    while ((split = buffer.indexOf("\n\n")) >= 0) {
+      const chunk = buffer.slice(0, split);
+      buffer = buffer.slice(split + 2);
+      for (const line of chunk.split("\n")) {
+        if (line.startsWith("data: ")) onEvent(JSON.parse(line.slice(6)) as T);
+      }
+    }
+  }
+}
+
+/** Stream an AI-drafted notice letter. */
+export function useDraftNotice(orgId: string, contractId: string) {
+  const auth = useAuthState();
+  return async (body: Schemas["DraftNoticeIn"], onEvent: (e: DraftEvent) => void) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/organizations/${orgId}/contracts/${contractId}/draft-notice`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(await auth.getHeaders()) },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => null);
+        onEvent({ type: "error", detail: err?.detail ?? `Request failed (${res.status})` });
+        return;
+      }
+      await readSse<DraftEvent>(res, onEvent);
+    } catch (e) {
+      onEvent({ type: "error", detail: e instanceof Error ? e.message : "Network error" });
     }
   };
 }

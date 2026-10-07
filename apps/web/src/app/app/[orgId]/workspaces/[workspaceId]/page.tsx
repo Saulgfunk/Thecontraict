@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Trash2 } from "lucide-react";
+import { Download, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -18,6 +18,7 @@ import {
   Select,
 } from "@/components/ui";
 import {
+  useDownload,
   useOrgMembers,
   useRemoveWorkspaceMember,
   useSetWorkspaceMember,
@@ -79,6 +80,7 @@ export default function WorkspacePage() {
   const members = useWorkspaceMembers(orgId, workspaceId);
   const setMember = useSetWorkspaceMember(orgId, workspaceId);
   const remove = useRemoveWorkspaceMember(orgId, workspaceId);
+  const download = useDownload(orgId);
 
   if (workspace.isPending) return <Loading />;
   if (workspace.error) return <ErrorText>{errorMessage(workspace.error)}</ErrorText>;
@@ -96,6 +98,18 @@ export default function WorkspacePage() {
         actions={
           <div className="flex items-center gap-2">
             <Badge tone="primary">Your role: {WORKSPACE_ROLE_LABELS[ws.my_role]}</Badge>
+            <Button
+              variant="secondary"
+              disabled={download.isPending}
+              onClick={() =>
+                download.mutate({
+                  path: `/exports/contracts.xlsx?workspace_id=${workspaceId}`,
+                  filename: `${ws.name.replace(/[^\w\- ]/g, "")}-contracts.xlsx`,
+                })
+              }
+            >
+              <Download className="size-4" /> Excel
+            </Button>
             <Link
               href={`/app/${orgId}/workspaces/${workspaceId}/chat`}
               className="bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium hover:opacity-90"

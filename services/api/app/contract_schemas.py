@@ -10,6 +10,7 @@ from app.models import (
     DateAnchor,
     DateRuleType,
     DayBasis,
+    DeadlineDecision,
     DeadlineKind,
     DeadlineStatus,
     DocumentStatus,
@@ -57,6 +58,10 @@ class DeadlineOut(ORMModel):
     derivation: list[str]
     confirmed: bool
     status: DeadlineStatus
+    decision: DeadlineDecision | None
+    decision_note: str | None
+    decided_at: datetime | None
+    decided_by_id: uuid.UUID | None
 
 
 class DeadlineWithContract(DeadlineOut):
@@ -66,7 +71,12 @@ class DeadlineWithContract(DeadlineOut):
 
 
 class DeadlineUpdate(BaseModel):
-    status: DeadlineStatus
+    """Change the status and/or record a decision. Recording a decision marks the deadline
+    done unless a status is given; ``decision: null`` clears it."""
+
+    status: DeadlineStatus | None = None
+    decision: DeadlineDecision | None = None
+    decision_note: str | None = Field(default=None, max_length=5000)
 
 
 class SourcedOut(ORMModel):

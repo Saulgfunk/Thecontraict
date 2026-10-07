@@ -75,6 +75,9 @@ log, deterministic deadline engine with a calculator in the UI.
   schedule to each contract's owner; weekly digest; private iCal calendar feed.
 - AI chat per contract and per workspace, with answers citing the exact clauses.
 
+**Phase 2 (in progress):** decisions on deadlines, calendar view, AI-drafted notice
+letters (download as Word), Excel exports of contracts and deadlines.
+
 AI analysis and chat need `ANTHROPIC_API_KEY` in `services/api/.env`. To try the AI on
 sample or real contracts without running the app, see
 [services/api/evals/README.md](services/api/evals/README.md). Without a worker

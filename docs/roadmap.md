@@ -12,7 +12,7 @@
 - Claude extraction (metadata, date rules, payment terms) with clause citations.
 - Deadline rule engine (calendar/business days, holidays) + derivation text.
 - Review & confirm UI.
-- Deadlines list, countdowns, owners, done/reopen. (Calendar grid view and renew/terminate decision records: Phase 2.)
+- Deadlines list and calendar view, countdowns, owners, done/reopen, decisions (renew / renegotiate / terminate / let expire / exercise option) with notes.
 - Email + in-app reminders, iCal feed, weekly digest.
 - Payment schedule + reminders.
 - AI chat (contract & workspace scope) with citations.
@@ -20,9 +20,11 @@
 
 ## Phase 2 — Depth
 
+- Done: AI-drafted notices (non-renewal, termination, renegotiation, option exercise) with
+  Word download; Excel exports of contracts and deadlines.
 - Contract families and amendment-aware "effective terms".
-- Obligations tracking, risk flags, contract summaries, notice letter drafting.
-- Portfolio dashboards, Excel/PDF exports, client reports (law firms).
+- Obligations tracking, risk flags.
+- Portfolio dashboards, PDF client reports (law firms).
 - Email-in ingestion, Google Drive / OneDrive / DocuSign import.
 - Slack / Teams notifications, SSO (SAML).
 

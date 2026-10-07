@@ -564,6 +564,81 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/organizations/{org_id}/contracts/{contract_id}/draft-notice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Notice
+         * @description Stream a draft notice letter as Server-Sent Events: ``delta`` events with text,
+         *     then ``done`` with the full text and the clauses it relied on, or ``error``.
+         */
+        post: operations["draft_notice_organizations__org_id__contracts__contract_id__draft_notice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/render-docx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Render Docx
+         * @description Turn (edited) letter text into a Word document.
+         */
+        post: operations["render_docx_organizations__org_id__render_docx_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/exports/deadlines.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Deadlines */
+        get: operations["export_deadlines_organizations__org_id__exports_deadlines_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/exports/contracts.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Contracts */
+        get: operations["export_contracts_organizations__org_id__exports_contracts_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -942,6 +1017,11 @@ export interface components {
          */
         DayBasis: "calendar" | "business";
         /**
+         * DeadlineDecision
+         * @enum {string}
+         */
+        DeadlineDecision: "renew" | "renegotiate" | "terminate" | "let_expire" | "exercise_option" | "no_action";
+        /**
          * DeadlineKind
          * @enum {string}
          */
@@ -980,15 +1060,29 @@ export interface components {
             /** Confirmed */
             confirmed: boolean;
             status: components["schemas"]["DeadlineStatus"];
+            decision: components["schemas"]["DeadlineDecision"] | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Id */
+            decided_by_id: string | null;
         };
         /**
          * DeadlineStatus
          * @enum {string}
          */
         DeadlineStatus: "open" | "done" | "dismissed";
-        /** DeadlineUpdate */
+        /**
+         * DeadlineUpdate
+         * @description Change the status and/or record a decision. Recording a decision marks the deadline
+         *     done unless a status is given; ``decision: null`` clears it.
+         */
         DeadlineUpdate: {
-            status: components["schemas"]["DeadlineStatus"];
+            status?: components["schemas"]["DeadlineStatus"] | null;
+            decision?: components["schemas"]["DeadlineDecision"] | null;
+            /** Decision Note */
+            decision_note?: string | null;
         };
         /** DeadlineWithContract */
         DeadlineWithContract: {
@@ -1024,6 +1118,13 @@ export interface components {
             /** Confirmed */
             confirmed: boolean;
             status: components["schemas"]["DeadlineStatus"];
+            decision: components["schemas"]["DeadlineDecision"] | null;
+            /** Decision Note */
+            decision_note: string | null;
+            /** Decided At */
+            decided_at: string | null;
+            /** Decided By Id */
+            decided_by_id: string | null;
             /** Contract Title */
             contract_title: string;
             /** Counterparty Name */
@@ -1064,6 +1165,26 @@ export interface components {
          * @enum {string}
          */
         DocumentStatus: "uploaded" | "processing" | "ready" | "failed";
+        /** DocxIn */
+        DocxIn: {
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+        };
+        /** DraftNoticeIn */
+        DraftNoticeIn: {
+            kind: components["schemas"]["NoticeKind"];
+            /** Deadline Id */
+            deadline_id?: string | null;
+            /**
+             * Sender
+             * @description Our side, as signatory
+             */
+            sender?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1122,6 +1243,11 @@ export interface components {
             organization: components["schemas"]["OrganizationOut"];
             role: components["schemas"]["OrgRole"];
         };
+        /**
+         * NoticeKind
+         * @enum {string}
+         */
+        NoticeKind: "non_renewal" | "termination" | "renegotiation" | "option_exercise";
         /** NoticePreviewIn */
         NoticePreviewIn: {
             /**
@@ -3287,6 +3413,152 @@ export interface operations {
                 content: {
                     "text/event-stream": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_notice_organizations__org_id__contracts__contract_id__draft_notice_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftNoticeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    render_docx_organizations__org_id__render_docx_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocxIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_deadlines_organizations__org_id__exports_deadlines_xlsx_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+                from?: string | null;
+                to?: string | null;
+                include_closed?: boolean;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_contracts_organizations__org_id__exports_contracts_xlsx_get: {
+        parameters: {
+            query?: {
+                workspace_id?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

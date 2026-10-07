@@ -615,16 +615,31 @@ def update_deadline(
     if deadline is None or deadline.organization_id != ctx.org_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Deadline not found")
     _get_contract(ctx, deadline.contract_id, WorkspaceRole.EDITOR)
-    deadline.status = body.status
+    changes = body.model_dump(exclude_unset=True)
+    if "decision" in changes:
+        deadline.decision = body.decision
+        deadline.decision_note = body.decision_note if body.decision else None
+        deadline.decided_at = datetime.now(UTC) if body.decision else None
+        deadline.decided_by_id = ctx.user.id if body.decision else None
+        if body.decision and "status" not in changes:
+            deadline.status = DeadlineStatus.DONE
+    elif "decision_note" in changes and deadline.decision:
+        deadline.decision_note = body.decision_note
+    if body.status is not None:
+        deadline.status = body.status
     audit.record(
         ctx.db,
         organization_id=ctx.org_id,
         workspace_id=deadline.workspace_id,
         actor_user_id=ctx.user.id,
-        action="deadline.status_changed",
+        action="deadline.decision_recorded" if "decision" in changes else "deadline.status_changed",
         entity_type="deadline",
         entity_id=deadline.id,
-        data={"status": body.status, "due_date": deadline.due_date.isoformat()},
+        data={
+            "label": deadline.label,
+            "due_date": deadline.due_date.isoformat(),
+            **body.model_dump(mode="json", exclude_unset=True),
+        },
     )
     ctx.db.commit()
     return deadline

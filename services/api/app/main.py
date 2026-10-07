@@ -8,6 +8,7 @@ from app.routers import (
     chat,
     contracts,
     deadlines,
+    documents_out,
     notifications,
     organizations,
     workspaces,
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
     app.include_router(deadlines.router)
     app.include_router(notifications.router)
     app.include_router(chat.router)
+    app.include_router(documents_out.router)
 
     @app.get("/health", tags=["system"])
     def health() -> dict[str, str]:

@@ -249,6 +249,15 @@ class DeadlineKind(enum.StrEnum):
     OTHER = "other"
 
 
+class DeadlineDecision(enum.StrEnum):
+    RENEW = "renew"
+    RENEGOTIATE = "renegotiate"
+    TERMINATE = "terminate"
+    LET_EXPIRE = "let_expire"
+    EXERCISE_OPTION = "exercise_option"
+    NO_ACTION = "no_action"
+
+
 class DeadlineStatus(enum.StrEnum):
     OPEN = "open"
     DONE = "done"
@@ -481,6 +490,15 @@ class Deadline(WorkspaceScopedMixin, Base):
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[DeadlineStatus] = mapped_column(
         _enum(DeadlineStatus, "deadline_status"), default=DeadlineStatus.OPEN
+    )
+    # What the team decided to do about it (renew, terminate, ...), and why.
+    decision: Mapped[DeadlineDecision | None] = mapped_column(
+        _enum(DeadlineDecision, "deadline_decision")
+    )
+    decision_note: Mapped[str | None] = mapped_column(Text)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    decided_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
     )
 
     contract: Mapped[Contract] = relationship(back_populates="deadlines")

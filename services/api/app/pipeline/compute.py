@@ -275,8 +275,12 @@ def refresh_deadlines(
         result = compute(contract, as_of, engine.Calendar())
         result.rule_errors = {r.id: str(exc) for r in contract.date_rules}
 
+    # User state (done/dismissed, decisions) is kept for deadlines that still exist.
+    user_fields = ("status", "decision", "decision_note", "decided_at", "decided_by_id")
     previous = {
-        (d.date_rule_id, d.payment_term_id, d.kind, d.due_date): d.status
+        (d.date_rule_id, d.payment_term_id, d.kind, d.due_date): {
+            f: getattr(d, f) for f in user_fields
+        }
         for d in contract.deadlines
     }
     contract.deadlines.clear()
@@ -294,7 +298,7 @@ def refresh_deadlines(
                 due_date=c.due_date,
                 derivation=c.derivation,
                 confirmed=c.confirmed,
-                status=previous.get(key, DeadlineStatus.OPEN),
+                **previous.get(key, {"status": DeadlineStatus.OPEN}),
             )
         )
     for rule in contract.date_rules:

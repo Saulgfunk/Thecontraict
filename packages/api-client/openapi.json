@@ -3975,6 +3975,391 @@
         }
       }
     },
+    "/organizations/{org_id}/contracts/{contract_id}/draft-notice": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Draft Notice",
+        "description": "Stream a draft notice letter as Server-Sent Events: ``delta`` events with text,\nthen ``done`` with the full text and the clauses it relied on, or ``error``.",
+        "operationId": "draft_notice_organizations__org_id__contracts__contract_id__draft_notice_post",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Org Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-dev-user-email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftNoticeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{org_id}/render-docx": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Render Docx",
+        "description": "Turn (edited) letter text into a Word document.",
+        "operationId": "render_docx_organizations__org_id__render_docx_post",
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Org Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-dev-user-email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-User-Email"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocxIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{org_id}/exports/deadlines.xlsx": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Export Deadlines",
+        "operationId": "export_deadlines_organizations__org_id__exports_deadlines_xlsx_get",
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Org Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "name": "include_closed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Closed"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-dev-user-email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organizations/{org_id}/exports/contracts.xlsx": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Export Contracts",
+        "operationId": "export_contracts_organizations__org_id__exports_contracts_xlsx_get",
+        "parameters": [
+          {
+            "name": "org_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Org Id"
+            }
+          },
+          {
+            "name": "workspace_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-dev-user-email",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Dev-User-Email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -5365,6 +5750,18 @@
         ],
         "title": "DayBasis"
       },
+      "DeadlineDecision": {
+        "type": "string",
+        "enum": [
+          "renew",
+          "renegotiate",
+          "terminate",
+          "let_expire",
+          "exercise_option",
+          "no_action"
+        ],
+        "title": "DeadlineDecision"
+      },
       "DeadlineKind": {
         "type": "string",
         "enum": [
@@ -5443,6 +5840,51 @@
           },
           "status": {
             "$ref": "#/components/schemas/DeadlineStatus"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Id"
           }
         },
         "type": "object",
@@ -5457,7 +5899,11 @@
           "due_date",
           "derivation",
           "confirmed",
-          "status"
+          "status",
+          "decision",
+          "decision_note",
+          "decided_at",
+          "decided_by_id"
         ],
         "title": "DeadlineOut"
       },
@@ -5473,14 +5919,41 @@
       "DeadlineUpdate": {
         "properties": {
           "status": {
-            "$ref": "#/components/schemas/DeadlineStatus"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
           }
         },
         "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "DeadlineUpdate"
+        "title": "DeadlineUpdate",
+        "description": "Change the status and/or record a decision. Recording a decision marks the deadline\ndone unless a status is given; ``decision: null`` clears it."
       },
       "DeadlineWithContract": {
         "properties": {
@@ -5549,6 +6022,51 @@
           "status": {
             "$ref": "#/components/schemas/DeadlineStatus"
           },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeadlineDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "decision_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Note"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decided_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided By Id"
+          },
           "contract_title": {
             "type": "string",
             "title": "Contract Title"
@@ -5582,6 +6100,10 @@
           "derivation",
           "confirmed",
           "status",
+          "decision",
+          "decision_note",
+          "decided_at",
+          "decided_by_id",
           "contract_title",
           "counterparty_name",
           "workspace_name"
@@ -5685,6 +6207,77 @@
           "failed"
         ],
         "title": "DocumentStatus"
+      },
+      "DocxIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "text"
+        ],
+        "title": "DocxIn"
+      },
+      "DraftNoticeIn": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/NoticeKind"
+          },
+          "deadline_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline Id"
+          },
+          "sender": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender",
+            "description": "Our side, as signatory"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "DraftNoticeIn"
       },
       "HTTPValidationError": {
         "properties": {
@@ -5837,6 +6430,16 @@
           "role"
         ],
         "title": "MyOrganization"
+      },
+      "NoticeKind": {
+        "type": "string",
+        "enum": [
+          "non_renewal",
+          "termination",
+          "renegotiation",
+          "option_exercise"
+        ],
+        "title": "NoticeKind"
       },
       "NoticePreviewIn": {
         "properties": {

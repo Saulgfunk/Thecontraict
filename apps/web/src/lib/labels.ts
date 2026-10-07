@@ -85,3 +85,19 @@ export const PAYMENT_DIRECTION_LABELS: Record<Schemas["PaymentDirection"], strin
   receivable: "We receive",
   unknown: "Direction unknown",
 };
+
+export const DECISION_LABELS: Record<Schemas["DeadlineDecision"], string> = {
+  renew: "Renew",
+  renegotiate: "Renegotiate",
+  terminate: "Terminate",
+  let_expire: "Let expire",
+  exercise_option: "Exercise option",
+  no_action: "No action needed",
+};
+
+export const NOTICE_KIND_LABELS: Record<Schemas["NoticeKind"], string> = {
+  non_renewal: "Notice of non-renewal",
+  termination: "Notice of termination",
+  renegotiation: "Renegotiation letter",
+  option_exercise: "Option exercise notice",
+};

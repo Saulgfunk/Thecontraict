@@ -14,6 +14,7 @@ dependencies = [
     "holidays>=0.106",
     "httpx>=0.28.1",
     "icalendar>=7.3.0",
+    "openpyxl>=3.1.5",
     "pdfplumber>=0.11.10",
     "psycopg[binary]>=3.3.6",
     "pydantic-settings>=2.15.0",

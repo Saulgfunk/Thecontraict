@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Pencil, Plus, X } from "lucide-react";
+import { Check, FileText, Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -11,6 +11,7 @@ import {
   describeRule,
   formatIsoDate,
 } from "@/components/app/contract-bits";
+import { NoticeDraftDialog } from "@/components/app/notice-draft-dialog";
 import { Badge, Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
 import {
   useCreateDateRule,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/api";
 import {
   ANCHOR_LABELS,
+  DECISION_LABELS,
   DEADLINE_KIND_LABELS,
   FREQUENCY_LABELS,
   PAYMENT_DIRECTION_LABELS,
@@ -35,6 +37,147 @@ type RuleUpdate = Schemas["DateRuleUpdate"];
 // Deadlines
 // ---------------------------------------------------------------------------
 
+const DECIDABLE: Schemas["DeadlineKind"][] = [
+  "notice",
+  "option",
+  "term_end",
+  "price_review",
+  "other",
+];
+
+function DeadlineItem({
+  orgId,
+  contract,
+  deadline: d,
+  canEdit,
+  onDraft,
+}: {
+  orgId: string;
+  contract: Schemas["ContractDetail"];
+  deadline: Schemas["DeadlineOut"];
+  canEdit: boolean;
+  onDraft: (d: Schemas["DeadlineOut"]) => void;
+}) {
+  const update = useUpdateDeadline(orgId);
+  const [deciding, setDeciding] = useState(false);
+  const [decision, setDecision] = useState<Schemas["DeadlineDecision"]>(
+    d.decision ?? (d.kind === "option" ? "exercise_option" : "renew"),
+  );
+  const [note, setNote] = useState(d.decision_note ?? "");
+  const closed = d.status !== "open";
+  const canDraft =
+    canEdit && (d.kind === "notice" || d.kind === "option") && !!contract.documents.length;
+
+  return (
+    <li className="py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className={cn("min-w-0", closed && !d.decision && "text-muted line-through")}>
+          <p className="font-medium">{d.label}</p>
+          <p className="text-muted text-sm">
+            {formatIsoDate(d.due_date)} · {DEADLINE_KIND_LABELS[d.kind]}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {!d.confirmed && <Badge tone="warning">Unconfirmed</Badge>}
+          {d.decision ? (
+            <Badge tone="primary">Decided: {DECISION_LABELS[d.decision]}</Badge>
+          ) : closed ? (
+            <Badge>{d.status === "done" ? "Done" : "Dismissed"}</Badge>
+          ) : (
+            <Countdown date={d.due_date} />
+          )}
+          {canDraft && (
+            <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => onDraft(d)}>
+              <FileText className="size-3.5" /> Draft notice
+            </Button>
+          )}
+          {canEdit && DECIDABLE.includes(d.kind) && !deciding && (
+            <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => setDeciding(true)}>
+              {d.decision ? "Change decision" : "Decide"}
+            </Button>
+          )}
+          {canEdit && !d.decision && (
+            <Button
+              variant="ghost"
+              className="h-8 px-2 text-xs"
+              onClick={() => update.mutate({ id: d.id, status: closed ? "open" : "done" })}
+            >
+              {closed ? "Reopen" : "Mark done"}
+            </Button>
+          )}
+        </div>
+      </div>
+      {d.decision && d.decision_note && !deciding && (
+        <p className="text-muted mt-1 text-sm">
+          “{d.decision_note}”
+          {d.decided_at ? ` · ${new Date(d.decided_at).toLocaleDateString()}` : ""}
+        </p>
+      )}
+      {deciding && (
+        <form
+          className="border-border mt-2 flex flex-wrap items-end gap-2 rounded-md border p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            update.mutate(
+              { id: d.id, decision, decision_note: note || null },
+              { onSuccess: () => setDeciding(false) },
+            );
+          }}
+        >
+          <Field label="Decision">
+            <Select
+              value={decision}
+              onChange={(e) => setDecision(e.target.value as Schemas["DeadlineDecision"])}
+            >
+              {Object.entries(DECISION_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Note (optional)" className="min-w-56 flex-1">
+            <Input
+              value={note}
+              placeholder="Why, and any next steps"
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </Field>
+          <Button type="submit" disabled={update.isPending}>
+            Save
+          </Button>
+          {d.decision && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() =>
+                update.mutate(
+                  { id: d.id, decision: null, status: "open" },
+                  { onSuccess: () => setDeciding(false) },
+                )
+              }
+            >
+              Clear decision
+            </Button>
+          )}
+          <Button type="button" variant="ghost" onClick={() => setDeciding(false)}>
+            Cancel
+          </Button>
+        </form>
+      )}
+      <details className="text-muted mt-1 text-xs">
+        <summary className="cursor-pointer select-none">How this was calculated</summary>
+        <ol className="bg-background mt-1 space-y-0.5 rounded p-2 font-mono">
+          {d.derivation.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ol>
+      </details>
+      <ErrorText>{errorMessage(update.error)}</ErrorText>
+    </li>
+  );
+}
+
 export function DeadlinesCard({
   orgId,
   contract,
@@ -44,17 +187,17 @@ export function DeadlinesCard({
   contract: Schemas["ContractDetail"];
   canEdit: boolean;
 }) {
-  const update = useUpdateDeadline(orgId);
   const [showPast, setShowPast] = useState(false);
+  const [drafting, setDrafting] = useState<Schemas["DeadlineOut"] | null | undefined>(undefined);
   const today = new Date().toISOString().slice(0, 10);
   const all = contract.deadlines;
-  // By default show what needs attention: everything open and upcoming, but only the next
-  // occurrence of each recurring payment (plus any overdue ones).
+  // By default show what needs attention: open and upcoming deadlines (and upcoming ones
+  // with a recorded decision), but only the next occurrence of each recurring payment.
   const seenPayments = new Set<string>();
   const visible = showPast
     ? all
     : all.filter((d) => {
-        if (d.status !== "open") return false;
+        if (d.status !== "open") return !!d.decision && d.due_date >= today;
         if (d.kind !== "payment" || !d.payment_term_id) return d.due_date >= today;
         if (d.due_date < today) return true;
         if (seenPayments.has(d.payment_term_id)) return false;
@@ -66,7 +209,14 @@ export function DeadlinesCard({
   return (
     <Card
       title="Deadlines"
-      description="Calculated from the terms and rules below. Each shows how it was worked out."
+      description="Calculated from the terms and rules below. Record what you decide for each."
+      actions={
+        canEdit && contract.documents.length ? (
+          <Button variant="secondary" onClick={() => setDrafting(null)}>
+            <FileText className="size-4" /> Draft a notice
+          </Button>
+        ) : null
+      }
     >
       {visible.length === 0 ? (
         <p className="text-muted text-sm">
@@ -74,48 +224,16 @@ export function DeadlinesCard({
         </p>
       ) : (
         <ul className="divide-border divide-y">
-          {visible.map((d) => {
-            const closed = d.status !== "open";
-            return (
-              <li key={d.id} className="py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className={cn("min-w-0", closed && "text-muted line-through")}>
-                    <p className="font-medium">{d.label}</p>
-                    <p className="text-muted text-sm">
-                      {formatIsoDate(d.due_date)} · {DEADLINE_KIND_LABELS[d.kind]}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {!d.confirmed && <Badge tone="warning">Unconfirmed</Badge>}
-                    {closed ? (
-                      <Badge>{d.status === "done" ? "Done" : "Dismissed"}</Badge>
-                    ) : (
-                      <Countdown date={d.due_date} />
-                    )}
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        className="h-8 px-2 text-xs"
-                        onClick={() =>
-                          update.mutate({ id: d.id, status: closed ? "open" : "done" })
-                        }
-                      >
-                        {closed ? "Reopen" : "Mark done"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <details className="text-muted mt-1 text-xs">
-                  <summary className="cursor-pointer select-none">How this was calculated</summary>
-                  <ol className="bg-background mt-1 space-y-0.5 rounded p-2 font-mono">
-                    {d.derivation.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
-                  </ol>
-                </details>
-              </li>
-            );
-          })}
+          {visible.map((d) => (
+            <DeadlineItem
+              key={d.id}
+              orgId={orgId}
+              contract={contract}
+              deadline={d}
+              canEdit={canEdit}
+              onDraft={setDrafting}
+            />
+          ))}
         </ul>
       )}
       {hidden > 0 && (
@@ -126,7 +244,14 @@ export function DeadlinesCard({
           Show all ({hidden} more: later payments, past or closed)
         </button>
       )}
-      <ErrorText>{errorMessage(update.error)}</ErrorText>
+      {drafting !== undefined && (
+        <NoticeDraftDialog
+          orgId={orgId}
+          contract={contract}
+          deadline={drafting ?? undefined}
+          onClose={() => setDrafting(undefined)}
+        />
+      )}
     </Card>
   );
 }
