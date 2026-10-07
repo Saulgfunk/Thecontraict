@@ -441,6 +441,67 @@ export interface paths {
         patch: operations["update_deadline_organizations__org_id__deadlines__deadline_id__patch"];
         trace?: never;
     };
+    "/organizations/{org_id}/contracts/{contract_id}/amendments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Amendment
+         * @description Record an amendment and apply its changes to the contract's current terms.
+         */
+        post: operations["create_amendment_organizations__org_id__contracts__contract_id__amendments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/amendments/{amendment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Amendment
+         * @description Delete an amendment and undo its changes (except values changed again since).
+         */
+        delete: operations["delete_amendment_organizations__org_id__amendments__amendment_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Amendment
+         * @description Edit an amendment's details. To change what it changes, delete and record it again.
+         */
+        patch: operations["update_amendment_organizations__org_id__amendments__amendment_id__patch"];
+        trace?: never;
+    };
+    "/organizations/{org_id}/amendments/{amendment_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach Amendment Document */
+        post: operations["attach_amendment_document_organizations__org_id__amendments__amendment_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/deadlines/notice-preview": {
         parameters: {
             query?: never;
@@ -725,6 +786,174 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AmendmentChangeOut */
+        AmendmentChangeOut: {
+            /** Target Type */
+            target_type: string;
+            /** Target Id */
+            target_id: string | null;
+            /** Field */
+            field: string;
+            /** Label */
+            label: string;
+            /** Old Value */
+            old_value: unknown;
+            /** New Value */
+            new_value: unknown;
+        };
+        /**
+         * AmendmentContractChanges
+         * @description New values for contract terms; only the fields given are changed.
+         */
+        AmendmentContractChanges: {
+            /** Title */
+            title?: string | null;
+            /** Counterparty Name */
+            counterparty_name?: string | null;
+            /** Contract Type */
+            contract_type?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Initial Term Amount */
+            initial_term_amount?: number | null;
+            initial_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Auto Renews */
+            auto_renews?: boolean | null;
+            /** Renewal Term Amount */
+            renewal_term_amount?: number | null;
+            renewal_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Governing Law */
+            governing_law?: string | null;
+            /** Holiday Country */
+            holiday_country?: string | null;
+            /** Currency */
+            currency?: string | null;
+            /** Contract Value */
+            contract_value?: number | string | null;
+            /** Notice Details */
+            notice_details?: string | null;
+        };
+        /** AmendmentCreate */
+        AmendmentCreate: {
+            /** Title */
+            title: string;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Signed Date */
+            signed_date?: string | null;
+            /** Description */
+            description?: string | null;
+            /** @default {} */
+            contract?: components["schemas"]["AmendmentContractChanges"];
+            /**
+             * Date Rules
+             * @default []
+             */
+            date_rules?: components["schemas"]["AmendmentRuleChange"][];
+            /**
+             * Payment Terms
+             * @default []
+             */
+            payment_terms?: components["schemas"]["AmendmentPaymentChange"][];
+            /**
+             * New Date Rules
+             * @default []
+             */
+            new_date_rules?: components["schemas"]["DateRuleIn"][];
+            /**
+             * New Payment Terms
+             * @default []
+             */
+            new_payment_terms?: components["schemas"]["PaymentTermIn"][];
+        };
+        /** AmendmentDeleted */
+        AmendmentDeleted: {
+            /** Reverted */
+            reverted: number;
+            /**
+             * Conflicts
+             * @description Changes not undone because the value was changed again afterwards.
+             */
+            conflicts: string[];
+        };
+        /** AmendmentOut */
+        AmendmentOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            /** Effective Date */
+            effective_date: string | null;
+            /** Signed Date */
+            signed_date: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Changes */
+            changes: components["schemas"]["AmendmentChangeOut"][];
+            /** Documents */
+            documents: components["schemas"]["DocumentOut"][];
+        };
+        /** AmendmentPaymentChange */
+        AmendmentPaymentChange: {
+            /**
+             * Payment Term Id
+             * Format: uuid
+             */
+            payment_term_id: string;
+            /** Description */
+            description?: string | null;
+            direction?: components["schemas"]["PaymentDirection"] | null;
+            /** Amount */
+            amount?: number | string | null;
+            /** Currency */
+            currency?: string | null;
+            frequency?: components["schemas"]["PaymentFrequency"] | null;
+            /** First Due Date */
+            first_due_date?: string | null;
+            /** Payment Days */
+            payment_days?: number | null;
+            /** Escalation */
+            escalation?: string | null;
+        };
+        /** AmendmentRuleChange */
+        AmendmentRuleChange: {
+            /**
+             * Date Rule Id
+             * Format: uuid
+             */
+            date_rule_id: string;
+            /** Label */
+            label?: string | null;
+            anchor?: components["schemas"]["DateAnchor"] | null;
+            /** Fixed Date */
+            fixed_date?: string | null;
+            /** Offset Amount */
+            offset_amount?: number | null;
+            offset_unit?: components["schemas"]["PeriodUnit"] | null;
+            offset_basis?: components["schemas"]["DayBasis"] | null;
+            direction?: components["schemas"]["OffsetDirection"] | null;
+            /** Delivery Amount */
+            delivery_amount?: number | null;
+        };
+        /** AmendmentUpdate */
+        AmendmentUpdate: {
+            /** Title */
+            title?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Signed Date */
+            signed_date?: string | null;
+            /** Description */
+            description?: string | null;
+        };
         /** AuditEventOut */
         AuditEventOut: {
             /**
@@ -751,6 +980,11 @@ export interface components {
              * Format: date-time
              */
             at: string;
+        };
+        /** Body_attach_amendment_document_organizations__org_id__amendments__amendment_id__documents_post */
+        Body_attach_amendment_document_organizations__org_id__amendments__amendment_id__documents_post: {
+            /** File */
+            file: string;
         };
         /** Body_attach_document_organizations__org_id__contracts__contract_id__documents_post */
         Body_attach_document_organizations__org_id__contracts__contract_id__documents_post: {
@@ -957,6 +1191,11 @@ export interface components {
             payment_terms: components["schemas"]["PaymentTermOut"][];
             /** Deadlines */
             deadlines: components["schemas"]["DeadlineOut"][];
+            /**
+             * Amendments
+             * @default []
+             */
+            amendments?: components["schemas"]["AmendmentOut"][];
         };
         /**
          * ContractStatus
@@ -1259,6 +1498,8 @@ export interface components {
             id: string;
             /** Ai Status */
             ai_status: string | null;
+            /** Amendment Id */
+            amendment_id: string | null;
             /** Filename */
             filename: string;
             /** Mime Type */
@@ -3075,6 +3316,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeadlineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_amendment_organizations__org_id__contracts__contract_id__amendments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AmendmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AmendmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_amendment_organizations__org_id__amendments__amendment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                amendment_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AmendmentDeleted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_amendment_organizations__org_id__amendments__amendment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                amendment_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AmendmentUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AmendmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_amendment_document_organizations__org_id__amendments__amendment_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                amendment_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_attach_amendment_document_organizations__org_id__amendments__amendment_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AmendmentOut"];
                 };
             };
             /** @description Validation Error */

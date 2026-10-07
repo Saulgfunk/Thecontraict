@@ -78,7 +78,7 @@ log, deterministic deadline engine with a calculator in the UI.
 **Phase 2 (in progress):** decisions on deadlines, calendar view, AI-drafted notice
 letters (download as Word), Excel exports of contracts and deadlines, manual-first
 contract entry (a guided form with a live notice-deadline preview; documents can be
-attached later).
+attached later), amendments (changes to terms with before/after history, reversible).
 
 **Without an API key** the app runs fully except the AI features: uploads are still
 split into clauses for reading, and the key terms are entered by hand.

@@ -49,6 +49,7 @@ _SOURCED_FIELDS = (
 
 # field_sources status for values a user typed in (never overwritten by AI analysis).
 MANUAL = "manual"
+AMENDED = "amended"  # set by an amendment (see app.amendments)
 
 
 def _source_dict(source: ext.Source, valid_refs: set[str]) -> dict[str, Any]:
@@ -63,7 +64,7 @@ def _source_dict(source: ext.Source, valid_refs: set[str]) -> dict[str, Any]:
 def _locked(contract: Contract, field: str) -> bool:
     """A field the user has reviewed must not be overwritten by a re-run."""
     status = (contract.field_sources or {}).get(field, {}).get("status")
-    return status in (ReviewStatus.CONFIRMED, ReviewStatus.EDITED, MANUAL)
+    return status in (ReviewStatus.CONFIRMED, ReviewStatus.EDITED, MANUAL, AMENDED)
 
 
 def apply_extraction(
@@ -273,6 +274,11 @@ def _process(db: Session, doc: Document) -> None:
     db.add_all(clauses)
     db.flush()
 
+    if doc.amendment_id:
+        # Amendment documents are kept for reading; their changes are recorded on the
+        # amendment, not extracted into the contract.
+        doc.ai_status = "skipped"
+        return
     if not ai:
         # Clauses are still useful (viewer, chat later); extraction waits for an API key.
         doc.ai_status = "skipped"

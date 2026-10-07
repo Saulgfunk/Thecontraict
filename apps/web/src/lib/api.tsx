@@ -809,3 +809,49 @@ export function useAttachDocument(orgId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId] }),
   });
 }
+
+// ---- Amendments ----
+
+export function useCreateAmendment(orgId: string, contractId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["AmendmentCreate"]) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/contracts/{contract_id}/amendments", {
+        params: { path: { org_id: orgId, contract_id: contractId } },
+        body,
+      }),
+    ),
+  );
+}
+
+export function useDeleteAmendment(orgId: string) {
+  return useContractMutation(orgId, (api, amendmentId: string) =>
+    unwrap(
+      api.DELETE("/organizations/{org_id}/amendments/{amendment_id}", {
+        params: { path: { org_id: orgId, amendment_id: amendmentId } },
+      }),
+    ),
+  );
+}
+
+/** Attach the amendment's document (multipart). */
+export function useAttachAmendmentDocument(orgId: string) {
+  const auth = useAuthState();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ amendmentId, file }: { amendmentId: string; file: File }) => {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(
+        `${API_URL}/organizations/${orgId}/amendments/${amendmentId}/documents`,
+        { method: "POST", body: form, headers: await auth.getHeaders() },
+      );
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        const detail = body?.detail;
+        throw new ApiError(res.status, typeof detail === "object" ? detail.message : detail);
+      }
+      return body as Schemas["AmendmentOut"];
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId] }),
+  });
+}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { AmendmentsCard } from "@/components/app/amendments";
 import { ChatPanel } from "@/components/app/chat-panel";
 import { ClauseViewer } from "@/components/app/clause-viewer";
 import { OwnerSelect } from "@/components/app/owner-select";
@@ -163,6 +164,7 @@ export default function ContractPage() {
             canEdit={canEdit}
             onSelectRefs={showRefs}
           />
+          <AmendmentsCard orgId={orgId} contract={c} canEdit={canEdit} />
           <DateRulesCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
           <PaymentTermsCard orgId={orgId} contract={c} canEdit={canEdit} onSelectRefs={showRefs} />
         </div>

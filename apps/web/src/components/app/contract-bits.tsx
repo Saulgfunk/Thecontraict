@@ -65,12 +65,12 @@ export function describeRule(rule: Schemas["DateRuleOut"]) {
   let text: string;
   if (!rule.offset_amount) text = `On ${anchor}`;
   else {
+    const one = rule.offset_amount === 1;
+    const base = (rule.offset_unit ?? "days").replace(/s$/, "") + (one ? "" : "s");
     const unit =
-      rule.offset_basis === "business" && rule.offset_unit === "days"
-        ? "business days"
-        : rule.offset_unit === "days"
-          ? "calendar days"
-          : rule.offset_unit;
+      rule.offset_unit === "days"
+        ? `${rule.offset_basis === "business" ? "business" : "calendar"} ${base}`
+        : base;
     text = `${rule.offset_amount} ${unit} ${rule.direction} ${anchor}`;
   }
   if (rule.delivery_amount) {

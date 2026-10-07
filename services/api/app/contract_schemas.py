@@ -26,6 +26,7 @@ from app.schemas import ORMModel, _check_country
 class DocumentOut(ORMModel):
     id: uuid.UUID
     ai_status: str | None
+    amendment_id: uuid.UUID | None
     filename: str
     mime_type: str
     size_bytes: int
@@ -200,6 +201,7 @@ class ContractDetail(ContractSummary):
     date_rules: list[DateRuleOut]
     payment_terms: list[PaymentTermOut]
     deadlines: list[DeadlineOut]
+    amendments: list["AmendmentOut"] = []
 
 
 # Fields a user can edit on the contract itself.
@@ -300,3 +302,102 @@ class ContractCreate(BaseModel):
             if (amount is None) != (unit is None):
                 raise ValueError(f"{prefix.replace('_', ' ')}: give both a number and a unit")
         return self
+
+
+# ---------------------------------------------------------------------------
+# Amendments
+# ---------------------------------------------------------------------------
+
+
+class AmendmentContractChanges(BaseModel):
+    """New values for contract terms; only the fields given are changed."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=500)
+    counterparty_name: str | None = Field(default=None, max_length=500)
+    contract_type: str | None = Field(default=None, max_length=100)
+    end_date: date | None = None
+    initial_term_amount: int | None = Field(default=None, ge=1, le=1200)
+    initial_term_unit: PeriodUnit | None = None
+    auto_renews: bool | None = None
+    renewal_term_amount: int | None = Field(default=None, ge=1, le=1200)
+    renewal_term_unit: PeriodUnit | None = None
+    governing_law: str | None = Field(default=None, max_length=200)
+    holiday_country: str | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    contract_value: Decimal | None = None
+    notice_details: str | None = None
+
+    _country = field_validator("holiday_country")(_check_country)
+
+
+class AmendmentRuleChange(BaseModel):
+    date_rule_id: uuid.UUID
+    label: str | None = Field(default=None, min_length=1, max_length=300)
+    anchor: DateAnchor | None = None
+    fixed_date: date | None = None
+    offset_amount: int | None = Field(default=None, ge=0, le=36500)
+    offset_unit: PeriodUnit | None = None
+    offset_basis: DayBasis | None = None
+    direction: OffsetDirection | None = None
+    delivery_amount: int | None = Field(default=None, ge=0, le=365)
+
+
+class AmendmentPaymentChange(BaseModel):
+    payment_term_id: uuid.UUID
+    description: str | None = Field(default=None, min_length=1, max_length=500)
+    direction: PaymentDirection | None = None
+    amount: Decimal | None = None
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    frequency: PaymentFrequency | None = None
+    first_due_date: date | None = None
+    payment_days: int | None = Field(default=None, ge=0, le=365)
+    escalation: str | None = None
+
+
+class AmendmentCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    effective_date: date | None = None
+    signed_date: date | None = None
+    description: str | None = Field(default=None, max_length=5000)
+    contract: AmendmentContractChanges = AmendmentContractChanges()
+    date_rules: list[AmendmentRuleChange] = Field(default=[], max_length=50)
+    payment_terms: list[AmendmentPaymentChange] = Field(default=[], max_length=50)
+    new_date_rules: list[DateRuleIn] = Field(default=[], max_length=50)
+    new_payment_terms: list[PaymentTermIn] = Field(default=[], max_length=50)
+
+
+class AmendmentUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    effective_date: date | None = None
+    signed_date: date | None = None
+    description: str | None = Field(default=None, max_length=5000)
+
+
+class AmendmentChangeOut(ORMModel):
+    target_type: str
+    target_id: uuid.UUID | None
+    field: str
+    label: str
+    old_value: Any
+    new_value: Any
+
+
+class AmendmentOut(ORMModel):
+    id: uuid.UUID
+    title: str
+    effective_date: date | None
+    signed_date: date | None
+    description: str | None
+    created_at: datetime
+    changes: list[AmendmentChangeOut]
+    documents: list[DocumentOut]
+
+
+class AmendmentDeleted(BaseModel):
+    reverted: int
+    conflicts: list[str] = Field(
+        description="Changes not undone because the value was changed again afterwards."
+    )
+
+
+ContractDetail.model_rebuild()

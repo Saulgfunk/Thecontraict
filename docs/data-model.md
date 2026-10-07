@@ -73,3 +73,11 @@ Contract 1─* PaymentTerm 1─* PaymentEvent 1─* Reminder
 Contract 1─* ExtractedField / Obligation / RiskFlag
 User *─* Workspace (WorkspaceMembership)
 ```
+
+## Amendments
+
+| Entity                    | Key fields                                                                                                                               | Notes                                                                                            |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Amendment**             | contract_id, title, effective_date, signed_date, description                                                                             | Its changes are applied to the contract, which always shows the terms in force                   |
+| **AmendmentChange**       | amendment_id, target_type (`contract` / `date_rule` / `payment_term`), target_id, field (`_created` for additions), old_value, new_value | Used for the before → after history and to revert; a value changed again since is never reverted |
+| **Document.amendment_id** | —                                                                                                                                        | Amendment documents are stored with the contract but not treated as its main document            |

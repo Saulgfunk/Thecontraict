@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.config import get_settings
 from app.db import engine
 from app.routers import (
+    amendments,
     chat,
     contracts,
     deadlines,
@@ -28,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(organizations.router)
     app.include_router(workspaces.router)
     app.include_router(contracts.router)
+    app.include_router(amendments.router)
     app.include_router(deadlines.router)
     app.include_router(notifications.router)
     app.include_router(chat.router)

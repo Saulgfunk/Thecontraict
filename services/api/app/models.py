@@ -336,6 +336,12 @@ class Contract(WorkspaceScopedMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    amendments: Mapped[list["Amendment"]] = relationship(
+        back_populates="contract",
+        order_by="Amendment.effective_date",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     deadlines: Mapped[list["Deadline"]] = relationship(
         back_populates="contract",
         order_by="Deadline.due_date",
@@ -363,6 +369,10 @@ class Document(WorkspaceScopedMixin, Base):
     text_source: Mapped[str | None] = mapped_column(String(20))  # "text_layer" | "ocr" | "docx"
     # "analysed" | "skipped" (AI not configured) | "failed"; null until processed.
     ai_status: Mapped[str | None] = mapped_column(String(20))
+    # Set when this document is an amendment's (rather than the original contract).
+    amendment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("amendments.id", ondelete="CASCADE"), index=True
+    )
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     contract: Mapped[Contract] = relationship(back_populates="documents")
@@ -637,3 +647,57 @@ class ChatMessage(TimestampMixin, Base):
     input_tokens: Mapped[int | None] = mapped_column(Integer)
     output_tokens: Mapped[int | None] = mapped_column(Integer)
     error: Mapped[str | None] = mapped_column(Text)
+
+
+# ---------------------------------------------------------------------------
+# Amendments
+# ---------------------------------------------------------------------------
+
+
+class Amendment(WorkspaceScopedMixin, Base):
+    """A change to a contract's terms. Its changes are applied to the contract (so the
+    contract always shows the terms currently in force) and recorded, with the previous
+    values, in ``AmendmentChange`` so they can be shown and reverted."""
+
+    __tablename__ = "amendments"
+
+    contract_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("contracts.id", ondelete="CASCADE"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(300))
+    effective_date: Mapped[date | None] = mapped_column(Date)
+    signed_date: Mapped[date | None] = mapped_column(Date)
+    description: Mapped[str | None] = mapped_column(Text)
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+    contract: Mapped[Contract] = relationship(back_populates="amendments")
+    documents: Mapped[list["Document"]] = relationship(
+        order_by="Document.created_at", viewonly=True
+    )
+    changes: Mapped[list["AmendmentChange"]] = relationship(
+        order_by="AmendmentChange.ordinal", cascade="all, delete-orphan", passive_deletes=True
+    )
+
+
+class AmendmentChange(Base):
+    __tablename__ = "amendment_changes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    amendment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("amendments.id", ondelete="CASCADE"), index=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer)
+    # "contract" | "date_rule" | "payment_term"
+    target_type: Mapped[str] = mapped_column(String(20))
+    # The rule / payment term changed or created (null for contract fields).
+    target_id: Mapped[uuid.UUID | None] = mapped_column(Uuid)
+    # A column name, or "_created" when the amendment added the rule / payment term.
+    field: Mapped[str] = mapped_column(String(50))
+    label: Mapped[str] = mapped_column(String(300))  # human description of the target
+    old_value: Mapped[Any] = mapped_column(JSONB)
+    new_value: Mapped[Any] = mapped_column(JSONB)

@@ -22,7 +22,10 @@
 
 - Done: AI-drafted notices (non-renewal, termination, renegotiation, option exercise) with
   Word download; Excel exports of contracts and deadlines.
-- Contract families and amendment-aware "effective terms".
+- Done: amendments (recorded changes to terms with before/after history, applied to the
+  current terms, reversible; amendment documents kept alongside).
+- Next for amendments: AI reading of amendment documents to propose the changes;
+  side letters and SOWs as linked documents.
 - Obligations tracking, risk flags.
 - Portfolio dashboards, PDF client reports (law firms).
 - Email-in ingestion, Google Drive / OneDrive / DocuSign import.

@@ -104,8 +104,14 @@ def _next_deadline(contract: Contract) -> Deadline | None:
     return min(upcoming, key=lambda d: d.due_date, default=None)
 
 
+def _main_documents(contract: Contract) -> list[Document]:
+    """The contract's own documents (amendment documents are listed on amendments)."""
+    return [d for d in contract.documents if d.amendment_id is None]
+
+
 def _summary(contract: Contract) -> ContractSummary:
     out = ContractSummary.model_validate(contract)
+    out.documents = [d for d in out.documents if d.amendment_id is None]
     nd = _next_deadline(contract)
     out.next_deadline = DeadlineOut.model_validate(nd) if nd else None
     out.pending_review = _pending_review(contract)
@@ -114,6 +120,7 @@ def _summary(contract: Contract) -> ContractSummary:
 
 def _detail(contract: Contract) -> ContractDetail:
     out = ContractDetail.model_validate(contract)
+    out.documents = [d for d in out.documents if d.amendment_id is None]
     nd = _next_deadline(contract)
     out.next_deadline = DeadlineOut.model_validate(nd) if nd else None
     out.pending_review = _pending_review(contract)
@@ -184,7 +191,13 @@ def _reject_duplicate(ctx: OrgContext, workspace_id: uuid.UUID, sha256: str) -> 
 
 
 def _store_document(
-    ctx: OrgContext, contract: Contract, data: bytes, filename: str, mime_type: str, sha256: str
+    ctx: OrgContext,
+    contract: Contract,
+    data: bytes,
+    filename: str,
+    mime_type: str,
+    sha256: str,
+    amendment_id: uuid.UUID | None = None,
 ) -> Document:
     document_id = uuid.uuid4()
     key = f"{ctx.org_id}/{contract.workspace_id}/{contract.id}/{document_id}/{filename}"
@@ -200,6 +213,7 @@ def _store_document(
         sha256=sha256,
         storage_key=key,
         status=DocumentStatus.UPLOADED,
+        amendment_id=amendment_id,
     )
     ctx.db.add(document)
     return document
@@ -439,9 +453,10 @@ def reprocess_contract(
 ) -> ContractDetail:
     """Run the AI analysis again. Values a user has reviewed are kept."""
     contract = _get_contract(ctx, contract_id, WorkspaceRole.EDITOR)
-    if not contract.documents:
+    documents = _main_documents(contract)
+    if not documents:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The contract has no document")
-    document = contract.documents[-1]
+    document = documents[-1]
     if document.status == DocumentStatus.PROCESSING:
         raise HTTPException(status.HTTP_409_CONFLICT, "The document is already being processed")
     document.status = DocumentStatus.UPLOADED

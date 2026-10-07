@@ -129,7 +129,11 @@ def _ready_documents(db: Session, contract_ids: list[uuid.UUID]) -> dict[uuid.UU
     """contract_id -> its latest processed document id."""
     rows = db.execute(
         select(Document.contract_id, Document.id)
-        .where(Document.contract_id.in_(contract_ids), Document.status == DocumentStatus.READY)
+        .where(
+            Document.contract_id.in_(contract_ids),
+            Document.status == DocumentStatus.READY,
+            Document.amendment_id.is_(None),
+        )
         .order_by(Document.created_at)
     ).all()
     return {contract_id: doc_id for contract_id, doc_id in rows}

@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
 
+import { AmendedBadge } from "@/components/app/amendments";
 import { Confidence, ReviewBadge, SourceRefs } from "@/components/app/contract-bits";
 import { Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
 import { useConfirmTerms, useUpdateContract, type Schemas } from "@/lib/api";
@@ -89,7 +90,13 @@ export function ContractTerms({
   const dirty = Object.keys(changes).length > 0;
   const sources = contract.field_sources as Record<
     string,
-    { clause_refs?: string[]; quote?: string; confidence?: number; status?: string }
+    {
+      clause_refs?: string[];
+      quote?: string;
+      confidence?: number;
+      status?: string;
+      amendment_title?: string;
+    }
   >;
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -100,7 +107,11 @@ export function ContractTerms({
     return (
       <div className="mt-1 space-y-0.5">
         <div className="flex items-center gap-2">
-          <ReviewBadge status={s.status ?? "ai_suggested"} />
+          {s.status === "amended" ? (
+            <AmendedBadge title={s.amendment_title} />
+          ) : (
+            <ReviewBadge status={s.status ?? "ai_suggested"} />
+          )}
           {s.status === "ai_suggested" && <Confidence value={s.confidence} />}
         </div>
         <SourceRefs refs={s.clause_refs ?? []} quote={s.quote} onSelect={onSelectRefs} />
