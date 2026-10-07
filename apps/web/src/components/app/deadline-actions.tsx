@@ -61,6 +61,44 @@ function choices(kind: Schemas["DeadlineKind"]): { decision: Decision | null; la
   }
 }
 
+export type Urgency = "overdue" | "soon" | "upcoming" | "later";
+
+export function urgency(date: string): Urgency {
+  const days = daysUntil(date);
+  return days < 0 ? "overdue" : days <= 14 ? "soon" : days <= 45 ? "upcoming" : "later";
+}
+
+const TILE_TONE: Record<Urgency, string> = {
+  overdue: "bg-danger/10 text-danger ring-danger/25",
+  soon: "bg-warning/10 text-warning ring-warning/25",
+  upcoming: "bg-primary/8 text-primary ring-primary/20",
+  later: "bg-foreground/[0.04] text-muted ring-foreground/10",
+};
+
+/** A small calendar leaf: month above, day below, tinted by how close the date is. */
+export function DateTile({ date, className }: { date: string; className?: string }) {
+  const [y, m, d] = date.split("-").map(Number);
+  const month = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    month: "short",
+    timeZone: "UTC",
+  });
+  return (
+    <span
+      className={cn(
+        "flex size-12 shrink-0 flex-col items-center justify-center rounded-xl ring-1 ring-inset",
+        TILE_TONE[urgency(date)],
+        className,
+      )}
+      aria-hidden
+    >
+      <span className="text-[10px] leading-none font-semibold tracking-wider uppercase">
+        {month}
+      </span>
+      <span className="mt-0.5 text-lg leading-none font-semibold">{d}</span>
+    </span>
+  );
+}
+
 export function DueText({ date, className }: { date: string; className?: string }) {
   const days = daysUntil(date);
   return (
@@ -100,7 +138,7 @@ export function QuickActions({
         <Button
           key={label}
           variant="secondary"
-          className="h-8 px-3 text-xs"
+          className="h-8 rounded-full px-3.5 text-xs"
           disabled={update.isPending}
           onClick={async () => {
             // mutateAsync, not mutate: the row unmounts once the list refreshes without it,
@@ -139,16 +177,16 @@ export function useUndoToast(orgId: string) {
   const node = toast ? (
     <div
       role="status"
-      className="border-border bg-surface fixed right-4 bottom-4 left-4 z-50 flex items-center justify-between gap-3 rounded-lg border p-3 text-sm shadow-lg sm:left-auto sm:w-96"
+      className="bg-sidebar text-sidebar-foreground animate-rise fixed right-4 bottom-4 left-4 z-50 flex items-center justify-between gap-3 rounded-xl p-3 pl-4 text-sm shadow-(--shadow-raised) sm:left-auto sm:w-[26rem]"
     >
       <span className="flex items-center gap-2">
-        <Check className="text-success size-4 shrink-0" />
+        <Check className="size-4 shrink-0 text-[#6fe0a0]" />
         {toast.message}
       </span>
       <span className="flex shrink-0 gap-1">
         <Button
           variant="ghost"
-          className="h-8 px-2 text-xs"
+          className="h-8 px-2 text-xs text-white hover:bg-white/10"
           onClick={() => {
             toast.undo();
             setToast(null);
@@ -156,7 +194,12 @@ export function useUndoToast(orgId: string) {
         >
           <Undo2 className="size-3.5" /> Undo
         </Button>
-        <Button variant="ghost" className="h-8 px-2 text-xs" onClick={() => setToast(null)}>
+        <Button
+          variant="ghost"
+          aria-label="Close"
+          className="text-sidebar-muted h-8 px-2 text-xs hover:bg-white/10 hover:text-white"
+          onClick={() => setToast(null)}
+        >
           ✕
         </Button>
       </span>
@@ -165,7 +208,7 @@ export function useUndoToast(orgId: string) {
   return { show, node };
 }
 
-/** A deadline as a row: sentence, contract, due date and the one-click choices. */
+/** A deadline as a row: date tile, sentence, contract, and the one-click choices. */
 export function AttentionRow({
   orgId,
   deadline: d,
@@ -175,35 +218,43 @@ export function AttentionRow({
   orgId: string;
   deadline: Schemas["DeadlineWithContract"];
   onDone: Done;
-  /** Narrow column: no workspace name, date on its own line. */
+  /** Narrow column: no workspace name, actions below. */
   compact?: boolean;
 }) {
   return (
     <li
       className={cn(
-        "flex justify-between gap-3 py-3",
-        compact ? "items-start" : "flex-wrap items-center",
+        "hover:bg-foreground/[0.025] -mx-3 flex gap-4 rounded-xl px-3 py-3.5 transition-colors",
+        compact ? "items-start" : "flex-wrap items-center sm:flex-nowrap",
       )}
     >
-      <div className="min-w-0">
-        <p className="font-medium">{deadlineSentence(d)}</p>
-        <p className="text-sm">
+      <DateTile date={d.due_date} className={compact ? "size-11" : undefined} />
+      <div className="min-w-0 flex-1">
+        <p className="leading-snug font-medium">{deadlineSentence(d)}</p>
+        <p className="mt-0.5 text-sm">
           <Link
             href={`/app/${orgId}/contracts/${d.contract_id}`}
-            className="text-primary hover:underline"
+            className="text-foreground/80 hover:text-primary underline decoration-current/20 underline-offset-2"
           >
             {d.contract_title}
           </Link>
-          {compact ? <br /> : <span className="text-muted"> · {d.workspace_name} · </span>}
-          <DueText date={d.due_date} />
-          {!d.confirmed && (
-            <span className="ml-2">
-              <Badge tone="warning">Check this date</Badge>
-            </span>
-          )}
+          {!compact && <span className="text-muted"> · {d.workspace_name}</span>}
         </p>
+        <p className="mt-0.5 flex flex-wrap items-center gap-2">
+          <DueText date={d.due_date} className="text-xs" />
+          {!d.confirmed && <Badge tone="warning">Check this date</Badge>}
+        </p>
+        {compact && (
+          <div className="mt-2">
+            <QuickActions orgId={orgId} deadline={d} onDone={onDone} />
+          </div>
+        )}
       </div>
-      <QuickActions orgId={orgId} deadline={d} onDone={onDone} />
+      {!compact && (
+        <div className="w-full pl-16 sm:w-auto sm:shrink-0 sm:pl-0">
+          <QuickActions orgId={orgId} deadline={d} onDone={onDone} />
+        </div>
+      )}
     </li>
   );
 }

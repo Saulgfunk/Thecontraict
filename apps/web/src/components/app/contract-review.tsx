@@ -5,13 +5,15 @@ import { useState } from "react";
 
 import {
   Confidence,
-  Countdown,
   ReviewBadge,
+  countdownText,
+  daysUntil,
   SourceRefs,
   describeRule,
   formatIsoDate,
   formatMoney,
 } from "@/components/app/contract-bits";
+import { DateTile } from "@/components/app/deadline-actions";
 import { NoticeDraftDialog } from "@/components/app/notice-draft-dialog";
 import { Badge, Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
 import {
@@ -77,22 +79,28 @@ function DeadlineItem({
 
   return (
     <li className="py-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className={cn("min-w-0", closed && !d.decision && "text-muted line-through")}>
-          <p className="font-medium">{d.label}</p>
-          <p className="text-muted text-sm">
-            {formatIsoDate(d.due_date)} · {DEADLINE_KIND_LABELS[d.kind]}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap">
+        <div className="flex min-w-0 items-center gap-3.5">
+          <DateTile
+            date={d.due_date}
+            className={cn("size-11", closed && !d.decision && "opacity-50")}
+          />
+          <div className={cn("min-w-0", closed && !d.decision && "text-muted line-through")}>
+            <p className="font-medium">{d.label}</p>
+            <p className="text-muted text-sm">
+              {formatIsoDate(d.due_date)}
+              {!closed && !d.decision && ` · ${countdownText(daysUntil(d.due_date))}`} ·{" "}
+              {DEADLINE_KIND_LABELS[d.kind]}
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-nowrap">
           {!d.confirmed && <Badge tone="warning">Unconfirmed</Badge>}
           {d.decision ? (
             <Badge tone="primary">Decided: {DECISION_LABELS[d.decision]}</Badge>
           ) : closed ? (
             <Badge>{d.status === "done" ? "Done" : "Dismissed"}</Badge>
-          ) : (
-            <Countdown date={d.due_date} />
-          )}
+          ) : null}
           {canDraft && (
             <Button variant="secondary" className="h-8 px-2 text-xs" onClick={() => onDraft(d)}>
               <FileText className="size-3.5" /> Draft notice
@@ -172,7 +180,7 @@ function DeadlineItem({
           </Button>
         </form>
       )}
-      <details className="text-muted mt-1 text-xs">
+      <details className="text-muted mt-1 pl-[3.6rem] text-xs">
         <summary className="cursor-pointer select-none">How this was calculated</summary>
         <ol className="bg-background mt-1 space-y-0.5 rounded p-2 font-mono">
           {d.derivation.map((s, i) => (

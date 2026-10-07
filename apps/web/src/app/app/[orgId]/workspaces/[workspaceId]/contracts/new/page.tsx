@@ -450,7 +450,7 @@ export default function NewContractPage() {
             </button>
           )}
 
-          <details className="border-border bg-surface group rounded-lg border">
+          <details className="border-border/80 bg-surface group rounded-2xl border shadow-(--shadow-card)">
             <summary className="cursor-pointer px-5 py-4 text-sm font-medium select-none">
               More options{" "}
               <span className="text-muted font-normal">

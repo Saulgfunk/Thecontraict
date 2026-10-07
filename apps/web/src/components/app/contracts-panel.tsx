@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { DueText, deadlineSentence } from "@/components/app/deadline-actions";
+import { DateTile, DueText, deadlineSentence } from "@/components/app/deadline-actions";
+import { Avatar } from "@/components/app/logo";
 import { Badge, ErrorText, Loading } from "@/components/ui";
 import { useAiEnabled, useAllContracts, useUploadContract } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
@@ -49,7 +50,7 @@ function Uploader({ orgId, workspaceId }: { orgId: string; workspaceId: string }
           void send(e.dataTransfer.files);
         }}
         className={cn(
-          "border-border text-muted hover:border-primary/50 flex w-full flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-6 text-sm transition",
+          "border-border bg-surface-2 text-muted hover:border-primary/50 hover:bg-primary/[0.03] flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed px-4 py-7 text-sm transition",
           dragging && "border-primary bg-primary/5",
         )}
       >
@@ -121,7 +122,7 @@ export function ContractsPanel({
           {needle ? "No contracts match your search." : "No contracts yet."}
         </p>
       ) : (
-        <ul className="divide-border divide-y">
+        <ul className="space-y-0.5">
           {list.map((c) => {
             const doc = c.documents.at(-1);
             const busy = doc && (doc.status === "uploaded" || doc.status === "processing");
@@ -131,10 +132,10 @@ export function ContractsPanel({
               <li key={c.id}>
                 <Link
                   href={`/app/${orgId}/contracts/${c.id}`}
-                  className="group flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  className="group hover:bg-foreground/[0.025] -mx-3 flex flex-col gap-3 rounded-xl px-3 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
-                  <span className="flex min-w-0 flex-1 items-center gap-3">
-                    <FileText className="text-muted size-4 shrink-0" />
+                  <span className="flex min-w-0 flex-1 items-center gap-3.5">
+                    <Avatar name={c.counterparty_name ?? c.title} />
                     <span className="min-w-0">
                       <span className="group-hover:text-primary block font-medium">{c.title}</span>
                       <span className="text-muted block truncate text-xs">
@@ -144,7 +145,7 @@ export function ContractsPanel({
                       </span>
                     </span>
                   </span>
-                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-7 sm:w-80 sm:shrink-0 sm:justify-end sm:pl-0 sm:text-right">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-[3.375rem] sm:w-80 sm:shrink-0 sm:justify-end sm:pl-0 sm:text-right">
                     {busy ? (
                       <Badge tone="primary">Reading the document…</Badge>
                     ) : doc?.status === "failed" ? (
@@ -157,11 +158,14 @@ export function ContractsPanel({
                       <Badge tone={status.tone}>{status.label}</Badge>
                     ) : null}
                     {next ? (
-                      <span className="text-xs">
-                        <span className="block">
-                          {deadlineSentence({ ...next, counterparty_name: c.counterparty_name })}
+                      <span className="flex items-center gap-3 sm:flex-row-reverse">
+                        <DateTile date={next.due_date} className="size-10 rounded-lg" />
+                        <span className="text-xs">
+                          <span className="block font-medium">
+                            {deadlineSentence({ ...next, counterparty_name: c.counterparty_name })}
+                          </span>
+                          <DueText date={next.due_date} className="text-xs" />
                         </span>
-                        <DueText date={next.due_date} className="text-xs" />
                       </span>
                     ) : (
                       !busy && <span className="text-muted text-xs">No upcoming dates</span>

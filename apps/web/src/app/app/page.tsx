@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { CreateOrganization } from "@/components/app/create-organization";
+import { Logo } from "@/components/app/logo";
 import { ErrorText, Loading } from "@/components/ui";
 import { useMe } from "@/lib/api";
 import { useAuthState } from "@/lib/auth";
@@ -34,6 +35,7 @@ export default function AppHome() {
         <ErrorText>Could not reach the API: {errorMessage(me.error)}</ErrorText>
       ) : (
         <>
+          <Logo className="mb-4" />
           <CreateOrganization />
           <button className="text-muted text-sm hover:underline" onClick={() => auth.signOut()}>
             Sign out ({auth.email})

@@ -1,10 +1,11 @@
 "use client";
 
-import { FolderOpen, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 import { ContractsPanel } from "@/components/app/contracts-panel";
+import { Avatar } from "@/components/app/logo";
 import { useCurrentOrg } from "@/components/app/use-org";
 import { AddContractButton, CreateWorkspaceForm } from "@/components/app/workspace-bits";
 import { Button, Card, ErrorText, Input, Loading, PageHeader, Select } from "@/components/ui";
@@ -95,9 +96,9 @@ export default function ContractsPage() {
                 <li key={w.id}>
                   <Link
                     href={`/app/${orgId}/workspaces/${w.id}`}
-                    className="hover:text-primary flex items-center gap-3 py-2.5 text-sm"
+                    className="hover:text-primary flex items-center gap-3 py-2 text-sm font-medium"
                   >
-                    <FolderOpen className="text-muted size-4 shrink-0" />
+                    <Avatar name={w.name} className="size-8 rounded-lg text-xs" />
                     <span className="truncate">{w.name}</span>
                   </Link>
                 </li>

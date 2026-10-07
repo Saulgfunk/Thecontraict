@@ -9,6 +9,7 @@ import { AmendmentsCard } from "@/components/app/amendments";
 import { ChatPanel } from "@/components/app/chat-panel";
 import { ClauseViewer } from "@/components/app/clause-viewer";
 import { ContractOverview } from "@/components/app/contract-overview";
+import { Avatar } from "@/components/app/logo";
 import { OwnerSelect } from "@/components/app/owner-select";
 import { DateRulesCard, DeadlinesCard, PaymentTermsCard } from "@/components/app/contract-review";
 import { ContractTerms } from "@/components/app/contract-terms";
@@ -77,9 +78,9 @@ export default function ContractPage() {
       </Link>
       <PageHeader
         title={c.title}
-        description={[c.counterparty_name, c.contract_type, workspace.data?.name]
-          .filter(Boolean)
-          .join(" · ")}
+        eyebrow={workspace.data?.name}
+        leading={<Avatar name={c.counterparty_name ?? c.title} className="size-14 text-lg" />}
+        description={[c.counterparty_name, c.contract_type].filter(Boolean).join(" · ")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {c.status !== "active" && <Badge tone={status.tone}>{status.label}</Badge>}

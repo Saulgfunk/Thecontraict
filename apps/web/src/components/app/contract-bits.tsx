@@ -28,15 +28,16 @@ export function countdownText(days: number): string {
 
 export function Countdown({ date, closed }: { date: string; closed?: boolean }) {
   const days = daysUntil(date);
+  // Same thresholds as the date tiles: overdue, within two weeks, within ~6 weeks, later.
   const tone = closed
     ? "neutral"
     : days < 0
       ? "danger"
-      : days <= 30
-        ? "danger"
-        : days <= 90
-          ? "warning"
-          : "success";
+      : days <= 14
+        ? "warning"
+        : days <= 45
+          ? "primary"
+          : "neutral";
   return <Badge tone={tone}>{countdownText(days)}</Badge>;
 }
 

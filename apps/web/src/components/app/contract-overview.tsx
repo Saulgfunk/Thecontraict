@@ -7,6 +7,7 @@ import {
   formatPeriod,
 } from "@/components/app/contract-bits";
 import {
+  DateTile,
   DueText,
   QuickActions,
   deadlineSentence,
@@ -43,8 +44,10 @@ export function termSentence(c: Contract): string | null {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1 py-3 sm:grid-cols-[9rem_1fr] sm:gap-4">
-      <dt className="text-muted text-sm">{label}</dt>
+    <div className="grid gap-1 py-3.5 sm:grid-cols-[8rem_1fr] sm:gap-4">
+      <dt className="text-muted text-xs font-semibold tracking-[0.08em] uppercase sm:pt-0.5">
+        {label}
+      </dt>
       <dd className="min-w-0 text-sm">{children}</dd>
     </div>
   );
@@ -90,18 +93,23 @@ export function ContractOverview({
       <dl className="divide-border divide-y">
         <Row label="Next step">
           {next ? (
-            <div className="space-y-2">
-              <p className="font-medium">
-                {deadlineSentence({ ...next, counterparty_name: c.counterparty_name })}
-              </p>
-              <DueText date={next.due_date} />
-              {canEdit && (
-                <QuickActions
-                  orgId={orgId}
-                  deadline={{ ...next, contract_title: c.title }}
-                  onDone={toast.show}
-                />
-              )}
+            <div className="bg-primary/[0.04] ring-primary/10 flex gap-4 rounded-xl p-4 ring-1">
+              <DateTile date={next.due_date} className="size-14" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div>
+                  <p className="font-medium">
+                    {deadlineSentence({ ...next, counterparty_name: c.counterparty_name })}
+                  </p>
+                  <DueText date={next.due_date} />
+                </div>
+                {canEdit && (
+                  <QuickActions
+                    orgId={orgId}
+                    deadline={{ ...next, contract_title: c.title }}
+                    onDone={toast.show}
+                  />
+                )}
+              </div>
             </div>
           ) : lastDecided?.decision ? (
             <p>

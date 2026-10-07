@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { Logo } from "@/components/app/logo";
 import { NotificationBell } from "@/components/app/notification-bell";
 import { ErrorText, Loading, Select } from "@/components/ui";
 import { useMe } from "@/lib/api";
@@ -63,39 +64,44 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
     },
   ];
 
+  const email = auth.email ?? "";
+  const initials = (email.split("@")[0] || "?")
+    .split(/[._-]/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
-      <aside className="border-border bg-surface flex flex-col gap-6 border-b p-4 md:w-64 md:border-r md:border-b-0">
+      <aside className="bg-sidebar text-sidebar-foreground flex flex-col gap-6 p-4 md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:p-5">
         <div className="flex items-center justify-between">
-          <Link href={base} className="px-2 text-lg font-semibold">
-            TheContr<span className="text-primary">AI</span>ct
+          <Link href={base} className="rounded-lg">
+            <Logo light />
           </Link>
           <NotificationBell orgId={orgId} />
         </div>
 
         {me.data.organizations.length > 1 ? (
-          <div className="space-y-1">
-            <div className="text-muted flex items-center gap-2 px-2 text-xs font-medium tracking-wide uppercase">
-              <Building2 className="size-3.5" /> Organization
-            </div>
-            <Select
-              aria-label="Switch organization"
-              value={orgId}
-              onChange={(e) =>
-                router.push(e.target.value === "__new" ? "/app/new" : `/app/${e.target.value}`)
-              }
-            >
-              {me.data.organizations.map((o) => (
-                <option key={o.organization.id} value={o.organization.id}>
-                  {o.organization.name}
-                </option>
-              ))}
-              <option value="__new">+ New organization…</option>
-            </Select>
-          </div>
+          <Select
+            aria-label="Switch organization"
+            className="border-sidebar-2 bg-sidebar-2 text-sidebar-foreground hover:border-sidebar-muted/40 h-9"
+            value={orgId}
+            onChange={(e) =>
+              router.push(e.target.value === "__new" ? "/app/new" : `/app/${e.target.value}`)
+            }
+          >
+            {me.data.organizations.map((o) => (
+              <option key={o.organization.id} value={o.organization.id}>
+                {o.organization.name}
+              </option>
+            ))}
+            <option value="__new">+ New organization…</option>
+          </Select>
         ) : (
-          <p className="flex items-center gap-2 px-2 text-sm font-medium">
-            <Building2 className="text-muted size-4" /> {current.organization.name}
+          <p className="bg-sidebar-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium">
+            <Building2 className="text-sidebar-muted size-4" />
+            <span className="truncate">{current.organization.name}</span>
           </p>
         )}
 
@@ -109,10 +115,15 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
                 key={href}
                 href={href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
-                  active ? "bg-primary/10 text-primary font-medium" : "hover:bg-background",
+                  "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  active
+                    ? "bg-white/10 font-medium text-white"
+                    : "text-sidebar-muted hover:bg-white/5 hover:text-white",
                 )}
               >
+                {active && (
+                  <span className="bg-accent absolute top-2 bottom-2 left-0 hidden w-0.5 rounded-full md:block" />
+                )}
                 <Icon className="size-4" />
                 {label}
               </Link>
@@ -120,13 +131,16 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
           })}
         </nav>
 
-        <div className="border-border mt-auto flex items-center justify-between gap-2 border-t px-2 pt-4 text-sm">
-          <span className="text-muted truncate" title={auth.email ?? ""}>
-            {auth.email}
+        <div className="mt-auto flex items-center gap-3 border-t border-white/10 pt-4 text-sm">
+          <span className="bg-accent/20 text-accent flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+            {initials}
+          </span>
+          <span className="text-sidebar-muted min-w-0 flex-1 truncate" title={email}>
+            {email}
           </span>
           <button
             onClick={() => auth.signOut()}
-            className="text-muted hover:text-foreground rounded p-1"
+            className="text-sidebar-muted rounded p-1 hover:text-white"
             aria-label="Sign out"
             title="Sign out"
           >
@@ -134,7 +148,9 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
           </button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-6 md:p-10">{children}</main>
+      <main className="min-w-0 flex-1 px-4 py-6 sm:px-8 md:py-10 lg:px-12">
+        <div className="mx-auto max-w-7xl">{children}</div>
+      </main>
     </div>
   );
 }

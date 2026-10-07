@@ -26,7 +26,7 @@ export function NotificationBell({ orgId }: { orgId: string }) {
   return (
     <div className="relative" ref={panel}>
       <button
-        className="text-muted hover:bg-background hover:text-foreground relative rounded-md p-1.5"
+        className="text-sidebar-muted relative rounded-lg p-1.5 hover:bg-white/10 hover:text-white"
         aria-label={`Notifications${unread ? ` (${unread} unread)` : ""}`}
         onClick={() => setOpen((o) => !o)}
       >
@@ -38,7 +38,7 @@ export function NotificationBell({ orgId }: { orgId: string }) {
         )}
       </button>
       {open && (
-        <div className="border-border bg-surface absolute top-9 right-0 z-20 w-80 max-w-[calc(100vw-2rem)] rounded-lg border shadow-lg md:right-auto md:left-0">
+        <div className="border-border bg-surface text-foreground absolute top-10 right-0 z-30 w-80 max-w-[calc(100vw-2rem)] rounded-xl border shadow-(--shadow-raised) md:right-auto md:left-0">
           <div className="border-border flex items-center justify-between border-b px-4 py-2.5">
             <span className="text-sm font-semibold">Notifications</span>
             {unread > 0 && (
