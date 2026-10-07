@@ -90,6 +90,7 @@ const REVIEW: Record<
 };
 
 export function ReviewBadge({ status }: { status: Schemas["ReviewStatus"] | string }) {
+  if (status === "manual") return <Badge tone="neutral">Entered manually</Badge>;
   const r = REVIEW[status as Schemas["ReviewStatus"]] ?? REVIEW.ai_suggested;
   return <Badge tone={r.tone}>{r.label}</Badge>;
 }

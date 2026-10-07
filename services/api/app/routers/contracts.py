@@ -24,6 +24,7 @@ from app.contract_schemas import (
     CONTRACT_EDITABLE,
     FIELD_OF_COLUMN,
     ClauseOut,
+    ContractCreate,
     ContractDetail,
     ContractSummary,
     ContractUpdate,
@@ -56,6 +57,7 @@ from app.models import (
 )
 from app.pipeline.compute import refresh_deadlines
 from app.pipeline.parse import UnsupportedDocument, sniff_mime_type
+from app.pipeline.run import MANUAL
 from app.reminders import accessible_workspace_ids
 from app.storage import get_storage
 from app.workers.tasks import enqueue_document
@@ -149,17 +151,8 @@ def _safe_filename(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-@router.post(
-    "/workspaces/{workspace_id}/contracts", response_model=ContractSummary, status_code=201
-)
-async def upload_contract(
-    workspace_id: uuid.UUID,
-    background: BackgroundTasks,
-    file: UploadFile = File(...),
-    title: str | None = Form(default=None),
-    ctx: OrgContext = Depends(get_org_context),
-) -> ContractSummary:
-    workspace = ctx.get_workspace(workspace_id, WorkspaceRole.EDITOR)
+async def _read_upload(file: UploadFile) -> tuple[bytes, str, str, str]:
+    """Validate an uploaded file: returns (data, filename, mime type, sha256)."""
     limit = get_settings().max_upload_mb * 1024 * 1024
     data = await file.read(limit + 1)
     if len(data) > limit:
@@ -173,10 +166,12 @@ async def upload_contract(
         mime_type = sniff_mime_type(data, filename)
     except UnsupportedDocument as exc:
         raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, str(exc)) from exc
+    return data, filename, mime_type, hashlib.sha256(data).hexdigest()
 
-    sha256 = hashlib.sha256(data).hexdigest()
+
+def _reject_duplicate(ctx: OrgContext, workspace_id: uuid.UUID, sha256: str) -> None:
     duplicate = ctx.db.scalar(
-        select(Document).where(Document.workspace_id == workspace.id, Document.sha256 == sha256)
+        select(Document).where(Document.workspace_id == workspace_id, Document.sha256 == sha256)
     )
     if duplicate:
         raise HTTPException(
@@ -187,6 +182,43 @@ async def upload_contract(
             },
         )
 
+
+def _store_document(
+    ctx: OrgContext, contract: Contract, data: bytes, filename: str, mime_type: str, sha256: str
+) -> Document:
+    document_id = uuid.uuid4()
+    key = f"{ctx.org_id}/{contract.workspace_id}/{contract.id}/{document_id}/{filename}"
+    get_storage().put(key, data, mime_type)
+    document = Document(
+        id=document_id,
+        organization_id=ctx.org_id,
+        workspace_id=contract.workspace_id,
+        contract_id=contract.id,
+        filename=filename,
+        mime_type=mime_type,
+        size_bytes=len(data),
+        sha256=sha256,
+        storage_key=key,
+        status=DocumentStatus.UPLOADED,
+    )
+    ctx.db.add(document)
+    return document
+
+
+@router.post(
+    "/workspaces/{workspace_id}/contracts", response_model=ContractSummary, status_code=201
+)
+async def upload_contract(
+    workspace_id: uuid.UUID,
+    background: BackgroundTasks,
+    file: UploadFile = File(...),
+    title: str | None = Form(default=None),
+    ctx: OrgContext = Depends(get_org_context),
+) -> ContractSummary:
+    """Upload a contract document; it is analysed in the background."""
+    workspace = ctx.get_workspace(workspace_id, WorkspaceRole.EDITOR)
+    data, filename, mime_type, sha256 = await _read_upload(file)
+    _reject_duplicate(ctx, workspace.id, sha256)
     contract = Contract(
         organization_id=ctx.org_id,
         workspace_id=workspace.id,
@@ -197,22 +229,7 @@ async def upload_contract(
     )
     ctx.db.add(contract)
     ctx.db.flush()
-    document_id = uuid.uuid4()
-    key = f"{ctx.org_id}/{workspace.id}/{contract.id}/{document_id}/{filename}"
-    get_storage().put(key, data, mime_type)
-    document = Document(
-        id=document_id,
-        organization_id=ctx.org_id,
-        workspace_id=workspace.id,
-        contract_id=contract.id,
-        filename=filename,
-        mime_type=mime_type,
-        size_bytes=len(data),
-        sha256=sha256,
-        storage_key=key,
-        status=DocumentStatus.UPLOADED,
-    )
-    ctx.db.add(document)
+    document = _store_document(ctx, contract, data, filename, mime_type, sha256)
     audit.record(
         ctx.db,
         organization_id=ctx.org_id,
@@ -227,6 +244,98 @@ async def upload_contract(
     ctx.db.refresh(contract)
     enqueue_document(background, ctx.org_id, document.id)
     return _summary(contract)
+
+
+@router.post(
+    "/workspaces/{workspace_id}/contracts/manual",
+    response_model=ContractDetail,
+    status_code=201,
+)
+def create_contract_manually(
+    workspace_id: uuid.UUID, body: ContractCreate, ctx: OrgContext = Depends(get_org_context)
+) -> ContractDetail:
+    """Create a contract from typed-in terms (no document needed). What the user enters
+    counts as reviewed: deadlines are confirmed and AI analysis never overwrites it."""
+    workspace = ctx.get_workspace(workspace_id, WorkspaceRole.EDITOR)
+    fields = body.model_dump(exclude={"date_rules", "payment_terms", "owner_id"})
+    now = datetime.now(UTC)
+    contract = Contract(
+        organization_id=ctx.org_id,
+        workspace_id=workspace.id,
+        status=ContractStatus.ACTIVE,
+        created_by_id=ctx.user.id,
+        owner_id=ctx.user.id,
+        reviewed_at=now,
+        reviewed_by_id=ctx.user.id,
+        **fields,
+    )
+    entered = {FIELD_OF_COLUMN.get(k, k) for k, v in fields.items() if v is not None}
+    contract.field_sources = {
+        f: {"clause_refs": [], "quote": None, "confidence": None, "status": MANUAL}
+        for f in sorted(entered)
+    }
+    ctx.db.add(contract)
+    ctx.db.flush()
+    if body.owner_id:
+        _check_owner(ctx, contract, body.owner_id)
+        contract.owner_id = body.owner_id
+    scope = {"organization_id": ctx.org_id, "workspace_id": workspace.id}
+    review = {
+        "review_status": ReviewStatus.CONFIRMED,
+        "reviewed_at": now,
+        "reviewed_by_id": ctx.user.id,
+    }
+    for rule in body.date_rules:
+        contract.date_rules.append(
+            DateRule(**scope, **rule.model_dump(), source_clause_refs=[], **review)
+        )
+    for term in body.payment_terms:
+        contract.payment_terms.append(
+            PaymentTerm(**scope, **term.model_dump(), source_clause_refs=[], **review)
+        )
+    audit.record(
+        ctx.db,
+        organization_id=ctx.org_id,
+        workspace_id=workspace.id,
+        actor_user_id=ctx.user.id,
+        action="contract.created_manually",
+        entity_type="contract",
+        entity_id=contract.id,
+        data=body.model_dump(mode="json"),
+    )
+    _recompute(ctx, contract)
+    ctx.db.commit()
+    ctx.db.refresh(contract)
+    return _detail(contract)
+
+
+@router.post("/contracts/{contract_id}/documents", response_model=ContractDetail, status_code=201)
+async def attach_document(
+    contract_id: uuid.UUID,
+    background: BackgroundTasks,
+    file: UploadFile = File(...),
+    ctx: OrgContext = Depends(get_org_context),
+) -> ContractDetail:
+    """Attach the signed document to an existing contract (e.g. one entered by hand). If
+    AI analysis is configured it runs, but terms a user entered or reviewed are kept."""
+    contract = _get_contract(ctx, contract_id, WorkspaceRole.EDITOR)
+    data, filename, mime_type, sha256 = await _read_upload(file)
+    _reject_duplicate(ctx, contract.workspace_id, sha256)
+    document = _store_document(ctx, contract, data, filename, mime_type, sha256)
+    audit.record(
+        ctx.db,
+        organization_id=ctx.org_id,
+        workspace_id=contract.workspace_id,
+        actor_user_id=ctx.user.id,
+        action="contract.document_attached",
+        entity_type="contract",
+        entity_id=contract.id,
+        data={"filename": filename, "size_bytes": len(data)},
+    )
+    ctx.db.commit()
+    ctx.db.refresh(contract)
+    enqueue_document(background, ctx.org_id, document.id)
+    return _detail(contract)
 
 
 @router.get("/workspaces/{workspace_id}/contracts", response_model=list[ContractSummary])

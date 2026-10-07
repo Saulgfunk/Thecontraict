@@ -14,7 +14,9 @@ import {
 import { NoticeDraftDialog } from "@/components/app/notice-draft-dialog";
 import { Badge, Button, Card, ErrorText, Field, Input, Select } from "@/components/ui";
 import {
+  useAiEnabled,
   useCreateDateRule,
+  useCreatePaymentTerm,
   useUpdateDateRule,
   useUpdateDeadline,
   useUpdatePaymentTerm,
@@ -65,8 +67,12 @@ function DeadlineItem({
   );
   const [note, setNote] = useState(d.decision_note ?? "");
   const closed = d.status !== "open";
+  const aiEnabled = useAiEnabled();
   const canDraft =
-    canEdit && (d.kind === "notice" || d.kind === "option") && !!contract.documents.length;
+    !!aiEnabled &&
+    canEdit &&
+    (d.kind === "notice" || d.kind === "option") &&
+    !!contract.documents.length;
 
   return (
     <li className="py-3">
@@ -189,6 +195,7 @@ export function DeadlinesCard({
 }) {
   const [showPast, setShowPast] = useState(false);
   const [drafting, setDrafting] = useState<Schemas["DeadlineOut"] | null | undefined>(undefined);
+  const aiEnabled = useAiEnabled();
   const today = new Date().toISOString().slice(0, 10);
   const all = contract.deadlines;
   // By default show what needs attention: open and upcoming deadlines (and upcoming ones
@@ -211,7 +218,7 @@ export function DeadlinesCard({
       title="Deadlines"
       description="Calculated from the terms and rules below. Record what you decide for each."
       actions={
-        canEdit && contract.documents.length ? (
+        aiEnabled && canEdit && contract.documents.length ? (
           <Button variant="secondary" onClick={() => setDrafting(null)}>
             <FileText className="size-4" /> Draft a notice
           </Button>
@@ -514,7 +521,7 @@ export function DateRulesCard({
         </div>
       )}
       {contract.date_rules.length === 0 ? (
-        <p className="text-muted text-sm">None found.</p>
+        <p className="text-muted text-sm">None yet.</p>
       ) : (
         <ul className="divide-border divide-y">
           {contract.date_rules.map((r) => (
@@ -549,6 +556,105 @@ function formatMoney(amount: string | number | null | undefined, currency: strin
   }
 }
 
+function PaymentForm({
+  orgId,
+  contract,
+  onDone,
+}: {
+  orgId: string;
+  contract: Schemas["ContractDetail"];
+  onDone: () => void;
+}) {
+  const create = useCreatePaymentTerm(orgId, contract.id);
+  const [p, setP] = useState({
+    description: "",
+    amount: "",
+    frequency: "monthly" as Schemas["PaymentFrequency"],
+    first_due_date: "",
+    payment_days: "",
+    direction: "payable" as Schemas["PaymentDirection"],
+  });
+  const set = (key: keyof typeof p, value: string) => setP((s) => ({ ...s, [key]: value }));
+  return (
+    <form
+      className="border-border mb-4 grid gap-3 rounded-md border p-3 sm:grid-cols-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        create.mutate(
+          {
+            description: p.description.trim(),
+            amount: p.amount || null,
+            currency: contract.currency ?? null,
+            frequency: p.frequency,
+            first_due_date: p.first_due_date || null,
+            payment_days: p.payment_days ? Number(p.payment_days) : null,
+            direction: p.direction,
+          },
+          { onSuccess: onDone },
+        );
+      }}
+    >
+      <Field label="Description" className="sm:col-span-2">
+        <Input
+          required
+          autoFocus
+          value={p.description}
+          placeholder="e.g. Monthly fee"
+          onChange={(e) => set("description", e.target.value)}
+        />
+      </Field>
+      <Field label={`Amount${contract.currency ? ` (${contract.currency})` : ""}`}>
+        <Input
+          type="number"
+          step="0.01"
+          value={p.amount}
+          onChange={(e) => set("amount", e.target.value)}
+        />
+      </Field>
+      <Field label="How often">
+        <Select value={p.frequency} onChange={(e) => set("frequency", e.target.value)}>
+          {Object.entries(FREQUENCY_LABELS).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field label="First due">
+        <Input
+          type="date"
+          value={p.first_due_date}
+          onChange={(e) => set("first_due_date", e.target.value)}
+        />
+      </Field>
+      <Field label="Who pays">
+        <Select value={p.direction} onChange={(e) => set("direction", e.target.value)}>
+          <option value="payable">We pay</option>
+          <option value="receivable">We receive</option>
+          <option value="unknown">Not sure</option>
+        </Select>
+      </Field>
+      <Field label="Payable within (days)">
+        <Input
+          type="number"
+          min={0}
+          value={p.payment_days}
+          onChange={(e) => set("payment_days", e.target.value)}
+        />
+      </Field>
+      <div className="flex items-end gap-2 sm:col-span-2">
+        <Button type="submit" disabled={create.isPending}>
+          Save
+        </Button>
+        <Button type="button" variant="ghost" onClick={onDone}>
+          Cancel
+        </Button>
+        <ErrorText>{errorMessage(create.error)}</ErrorText>
+      </div>
+    </form>
+  );
+}
+
 export function PaymentTermsCard({
   orgId,
   contract,
@@ -561,10 +667,22 @@ export function PaymentTermsCard({
   onSelectRefs: (refs: string[]) => void;
 }) {
   const update = useUpdatePaymentTerm(orgId);
+  const [adding, setAdding] = useState(false);
   return (
-    <Card title="Payments and invoicing" description="Used for invoice and payment reminders.">
+    <Card
+      title="Payments and invoicing"
+      description="Used for invoice and payment reminders."
+      actions={
+        canEdit && !adding ? (
+          <Button variant="secondary" onClick={() => setAdding(true)}>
+            <Plus className="size-4" /> Add
+          </Button>
+        ) : null
+      }
+    >
+      {adding && <PaymentForm orgId={orgId} contract={contract} onDone={() => setAdding(false)} />}
       {contract.payment_terms.length === 0 ? (
-        <p className="text-muted text-sm">None found.</p>
+        !adding && <p className="text-muted text-sm">None yet.</p>
       ) : (
         <ul className="divide-border divide-y">
           {contract.payment_terms.map((p) => {

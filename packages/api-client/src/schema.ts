@@ -190,8 +190,53 @@ export interface paths {
         /** List Contracts */
         get: operations["list_contracts_organizations__org_id__workspaces__workspace_id__contracts_get"];
         put?: never;
-        /** Upload Contract */
+        /**
+         * Upload Contract
+         * @description Upload a contract document; it is analysed in the background.
+         */
         post: operations["upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/workspaces/{workspace_id}/contracts/manual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Contract Manually
+         * @description Create a contract from typed-in terms (no document needed). What the user enters
+         *     counts as reviewed: deadlines are confirmed and AI analysis never overwrites it.
+         */
+        post: operations["create_contract_manually_organizations__org_id__workspaces__workspace_id__contracts_manual_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/organizations/{org_id}/contracts/{contract_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Document
+         * @description Attach the signed document to an existing contract (e.g. one entered by hand). If
+         *     AI analysis is configured it runs, but terms a user entered or reviewed are kept.
+         */
+        post: operations["attach_document_organizations__org_id__contracts__contract_id__documents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -639,6 +684,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Public Config
+         * @description Feature flags the web app adapts to (no secrets).
+         */
+        get: operations["public_config_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -686,6 +751,11 @@ export interface components {
              * Format: date-time
              */
             at: string;
+        };
+        /** Body_attach_document_organizations__org_id__contracts__contract_id__documents_post */
+        Body_attach_document_organizations__org_id__contracts__contract_id__documents_post: {
+            /** File */
+            file: string;
         };
         /** Body_upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post */
         Body_upload_contract_organizations__org_id__workspaces__workspace_id__contracts_post: {
@@ -757,6 +827,54 @@ export interface components {
             page_start: number | null;
             /** Page End */
             page_end: number | null;
+        };
+        /**
+         * ContractCreate
+         * @description A contract entered by hand.
+         */
+        ContractCreate: {
+            /** Title */
+            title: string;
+            /** Counterparty Name */
+            counterparty_name?: string | null;
+            /** Contract Type */
+            contract_type?: string | null;
+            /** Effective Date */
+            effective_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Initial Term Amount */
+            initial_term_amount?: number | null;
+            initial_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Auto Renews */
+            auto_renews?: boolean | null;
+            /** Renewal Term Amount */
+            renewal_term_amount?: number | null;
+            renewal_term_unit?: components["schemas"]["PeriodUnit"] | null;
+            /** Governing Law */
+            governing_law?: string | null;
+            /** Holiday Country */
+            holiday_country?: string | null;
+            /** Holiday Subdivision */
+            holiday_subdivision?: string | null;
+            /** Currency */
+            currency?: string | null;
+            /** Contract Value */
+            contract_value?: number | string | null;
+            /** Notice Details */
+            notice_details?: string | null;
+            /** Owner Id */
+            owner_id?: string | null;
+            /**
+             * Date Rules
+             * @default []
+             */
+            date_rules?: components["schemas"]["DateRuleIn"][];
+            /**
+             * Payment Terms
+             * @default []
+             */
+            payment_terms?: components["schemas"]["PaymentTermIn"][];
         };
         /** ContractDetail */
         ContractDetail: {
@@ -1139,6 +1257,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Ai Status */
+            ai_status: string | null;
             /** Filename */
             filename: string;
             /** Mime Type */
@@ -2408,6 +2528,84 @@ export interface operations {
             };
         };
     };
+    create_contract_manually_organizations__org_id__workspaces__workspace_id__contracts_manual_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                workspace_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attach_document_organizations__org_id__contracts__contract_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "x-dev-user-email"?: string | null;
+            };
+            path: {
+                contract_id: string;
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_attach_document_organizations__org_id__contracts__contract_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_contract_organizations__org_id__contracts__contract_id__get: {
         parameters: {
             query?: never;
@@ -3567,6 +3765,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    public_config_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
         };

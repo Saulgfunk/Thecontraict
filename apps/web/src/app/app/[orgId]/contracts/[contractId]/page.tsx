@@ -12,7 +12,13 @@ import { DateRulesCard, DeadlinesCard, PaymentTermsCard } from "@/components/app
 import { ContractTerms } from "@/components/app/contract-terms";
 import { useCurrentOrg } from "@/components/app/use-org";
 import { Badge, Button, Card, ErrorText, Loading, PageHeader } from "@/components/ui";
-import { useContract, useDeleteContract, useReprocessContract, useWorkspace } from "@/lib/api";
+import {
+  useAiEnabled,
+  useContract,
+  useDeleteContract,
+  useReprocessContract,
+  useWorkspace,
+} from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -24,6 +30,7 @@ export default function ContractPage() {
   const workspace = useWorkspace(orgId, contract.data?.workspace_id ?? "");
   const reprocess = useReprocessContract(orgId, contractId);
   const remove = useDeleteContract(orgId, contractId);
+  const aiEnabled = useAiEnabled();
   // Links from workspace chat answers carry the cited clauses in the URL hash (#C5,C8).
   // (The clause list only renders after data loads, so reading window here is safe.)
   const [selected, setSelected] = useState<string[]>(() =>
@@ -68,14 +75,16 @@ export default function ContractPage() {
             <OwnerSelect orgId={orgId} contract={c} canEdit={canEdit} />
             {canEdit && (
               <>
-                <Button
-                  variant="secondary"
-                  disabled={busy || reprocess.isPending}
-                  onClick={() => reprocess.mutate()}
-                  title="Analyse the document again. Values you reviewed are kept."
-                >
-                  <RefreshCw className="size-4" /> Re-analyse
-                </Button>
+                {aiEnabled && doc && (
+                  <Button
+                    variant="secondary"
+                    disabled={busy || reprocess.isPending}
+                    onClick={() => reprocess.mutate()}
+                    title="Analyse the document again. Values you reviewed are kept."
+                  >
+                    <RefreshCw className="size-4" /> Re-analyse
+                  </Button>
+                )}
                 <Button
                   variant="danger"
                   disabled={remove.isPending}
@@ -103,6 +112,19 @@ export default function ContractPage() {
           <p className="text-muted">
             Reading the document and finding dates, notice periods and payment terms. This usually
             takes under a minute; the page updates automatically.
+          </p>
+        </div>
+      )}
+      {doc?.ai_status === "skipped" && !c.reviewed_at && (
+        <div className="border-primary/30 bg-primary/5 mb-6 rounded-lg border p-4 text-sm">
+          <p className="font-medium">Enter the key terms</p>
+          <p className="text-muted">
+            AI analysis is switched off, so the dates were not read automatically.{" "}
+            {doc.text_source === "needs_ocr"
+              ? "This is a scanned document: open the original to read it."
+              : "The document is shown on the right for reference."}{" "}
+            Fill in the term and renewal below, add the notice period under &ldquo;Notice periods
+            and key dates&rdquo;, then confirm.
           </p>
         </div>
       )}
@@ -150,24 +172,32 @@ export default function ContractPage() {
               className="flex h-full flex-col [&>div]:min-h-0 [&>div]:flex-1"
               title={tab === "document" ? "Document" : "Ask about this contract"}
               actions={
-                <div className="border-border flex rounded-md border p-0.5 text-sm">
-                  {(["document", "chat"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTab(t)}
-                      className={cn(
-                        "rounded px-3 py-1",
-                        tab === t ? "bg-primary text-primary-foreground" : "text-muted",
-                      )}
-                    >
-                      {t === "document" ? "Document" : "Ask AI"}
-                    </button>
-                  ))}
-                </div>
+                aiEnabled && doc ? (
+                  <div className="border-border flex rounded-md border p-0.5 text-sm">
+                    {(["document", "chat"] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        className={cn(
+                          "rounded px-3 py-1",
+                          tab === t ? "bg-primary text-primary-foreground" : "text-muted",
+                        )}
+                      >
+                        {t === "document" ? "Document" : "Ask AI"}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
               }
             >
-              {tab === "document" ? (
-                <ClauseViewer orgId={orgId} document={doc} selected={selected} />
+              {tab === "document" || !aiEnabled ? (
+                <ClauseViewer
+                  orgId={orgId}
+                  contractId={c.id}
+                  document={doc}
+                  selected={selected}
+                  canEdit={canEdit}
+                />
               ) : (
                 <ChatPanel
                   className="h-full"

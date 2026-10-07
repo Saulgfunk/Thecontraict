@@ -33,6 +33,11 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(documents_out.router)
 
+    @app.get("/config", tags=["system"])
+    def public_config() -> dict[str, bool]:
+        """Feature flags the web app adapts to (no secrets)."""
+        return {"ai_enabled": get_settings().ai_enabled}
+
     @app.get("/health", tags=["system"])
     def health() -> dict[str, str]:
         with engine.connect() as conn:

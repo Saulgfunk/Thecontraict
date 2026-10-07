@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 
 import { Countdown, formatIsoDate } from "@/components/app/contract-bits";
 import { Badge, ErrorText, Loading } from "@/components/ui";
-import { useContracts, useUploadContract } from "@/lib/api";
+import { useAiEnabled, useContracts, useUploadContract } from "@/lib/api";
 import { CONTRACT_STATUS } from "@/lib/labels";
 import { cn, errorMessage } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ const ACCEPT =
 
 function Uploader({ orgId, workspaceId }: { orgId: string; workspaceId: string }) {
   const upload = useUploadContract(orgId, workspaceId);
+  const aiEnabled = useAiEnabled();
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -58,7 +59,13 @@ function Uploader({ orgId, workspaceId }: { orgId: string; workspaceId: string }
         ) : (
           <span>
             <span className="text-primary font-medium">Upload contracts</span> or drag them here
-            (PDF or Word, scanned PDFs too)
+            (PDF or Word{aiEnabled ? ", scanned PDFs too" : ""})
+            {aiEnabled === false && (
+              <span className="mt-1 block text-xs">
+                AI analysis is off: after uploading, you enter the key terms yourself. Or use
+                &ldquo;New contract&rdquo; to type them in first.
+              </span>
+            )}
           </span>
         )}
       </button>

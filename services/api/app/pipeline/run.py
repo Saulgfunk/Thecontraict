@@ -9,6 +9,7 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import SessionLocal, set_tenant
 from app.models import (
     Clause,
@@ -46,6 +47,10 @@ _SOURCED_FIELDS = (
 )
 
 
+# field_sources status for values a user typed in (never overwritten by AI analysis).
+MANUAL = "manual"
+
+
 def _source_dict(source: ext.Source, valid_refs: set[str]) -> dict[str, Any]:
     return {
         "clause_refs": [r for r in source.clause_refs if r in valid_refs],
@@ -58,7 +63,7 @@ def _source_dict(source: ext.Source, valid_refs: set[str]) -> dict[str, Any]:
 def _locked(contract: Contract, field: str) -> bool:
     """A field the user has reviewed must not be overwritten by a re-run."""
     status = (contract.field_sources or {}).get(field, {}).get("status")
-    return status in (ReviewStatus.CONFIRMED, ReviewStatus.EDITED)
+    return status in (ReviewStatus.CONFIRMED, ReviewStatus.EDITED, MANUAL)
 
 
 def apply_extraction(
@@ -211,6 +216,7 @@ def process_document(org_id: uuid.UUID, document_id: uuid.UUID) -> None:
             doc = db.get(Document, document_id)
             assert doc is not None
             doc.status = DocumentStatus.FAILED
+            doc.ai_status = "failed"
             doc.error = (
                 str(exc)
                 if isinstance(exc, ext.ExtractionError | ValueError)
@@ -227,6 +233,16 @@ def _process(db: Session, doc: Document) -> None:
     parsed = parse(data, doc.mime_type)
     doc.page_count = parsed.page_count
     pages = parsed.pages
+    ai = get_settings().ai_enabled
+    contract = db.get(Contract, doc.contract_id)
+    assert contract is not None
+
+    if parsed.text_source == "needs_ocr" and not ai:
+        # Scanned and no AI to read it: keep the file; the user enters the terms.
+        doc.text_source = "needs_ocr"
+        doc.ai_status = "skipped"
+        _await_manual_entry(contract)
+        return
     if parsed.text_source == "needs_ocr":
         if (parsed.page_count or 0) > MAX_OCR_PAGES:
             raise ValueError(f"Scanned documents are limited to {MAX_OCR_PAGES} pages for now")
@@ -257,10 +273,15 @@ def _process(db: Session, doc: Document) -> None:
     db.add_all(clauses)
     db.flush()
 
-    contract = db.get(Contract, doc.contract_id)
+    if not ai:
+        # Clauses are still useful (viewer, chat later); extraction waits for an API key.
+        doc.ai_status = "skipped"
+        _await_manual_entry(contract)
+        return
+
     org = db.get(Organization, doc.organization_id)
     workspace = db.get(Workspace, doc.workspace_id)
-    assert contract and org and workspace
+    assert org and workspace
 
     extractor = ext.get_extractor()
     xml = ext.render_clauses([(c.ref, c.number, c.heading, c.page_start, c.text) for c in clauses])
@@ -279,6 +300,7 @@ def _process(db: Session, doc: Document) -> None:
         db.commit()  # keep the failed run for diagnosis
         raise
     run.status = "succeeded"
+    doc.ai_status = "analysed"
     run.model = result.model
     run.input_tokens = result.input_tokens
     run.output_tokens = result.output_tokens
@@ -290,6 +312,11 @@ def _process(db: Session, doc: Document) -> None:
     db.flush()
     db.refresh(contract)
     refresh_deadlines(db, contract, org.default_country)
+
+
+def _await_manual_entry(contract: Contract) -> None:
+    if contract.status == ContractStatus.PROCESSING:
+        contract.status = ContractStatus.NEEDS_REVIEW
 
 
 def latest_clauses(db: Session, document_id: uuid.UUID) -> list[Clause]:

@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     smtp_starttls: bool = True
     postmark_server_token: str = ""
 
+    @property
+    def ai_enabled(self) -> bool:
+        return bool(self.anthropic_api_key)
+
 
 @lru_cache
 def get_settings() -> Settings:

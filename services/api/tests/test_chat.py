@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 
 from app import chat
+from app.config import get_settings
 from tests.conftest import Client
 from tests.samples import FakeExtractor, msa_docx
 from tests.test_api import ALICE, BOB, create_org, create_workspace
@@ -162,6 +163,7 @@ def test_chat_errors_and_privacy(
     ).json()["id"]
 
     # Not configured: a clear error event, and the question is kept.
+    monkeypatch.setattr(get_settings(), "anthropic_api_key", "")
     chat.get_chat_model.cache_clear()
     evs = events(
         alice.post(

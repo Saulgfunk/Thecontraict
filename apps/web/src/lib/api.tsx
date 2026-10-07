@@ -744,3 +744,68 @@ export function useDraftNotice(orgId: string, contractId: string) {
     }
   };
 }
+
+// ---- Manual entry ----
+
+/** Server feature flags (whether AI analysis is configured). */
+export function useConfig() {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["config"],
+    queryFn: () => unwrap(api.GET("/config")) as Promise<{ ai_enabled: boolean }>,
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useAiEnabled(): boolean | undefined {
+  return useConfig().data?.ai_enabled;
+}
+
+export function useCreateContractManually(orgId: string, workspaceId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["ContractCreate"]) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/workspaces/{workspace_id}/contracts/manual", {
+        params: { path: { org_id: orgId, workspace_id: workspaceId } },
+        body,
+      }),
+    ),
+  );
+}
+
+export function useCreatePaymentTerm(orgId: string, contractId: string) {
+  return useContractMutation(orgId, (api, body: Schemas["PaymentTermIn"]) =>
+    unwrap(
+      api.POST("/organizations/{org_id}/contracts/{contract_id}/payment-terms", {
+        params: { path: { org_id: orgId, contract_id: contractId } },
+        body,
+      }),
+    ),
+  );
+}
+
+/** Attach a file to an existing contract (multipart). */
+export function useAttachDocument(orgId: string) {
+  const auth = useAuthState();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ contractId, file }: { contractId: string; file: File }) => {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(
+        `${API_URL}/organizations/${orgId}/contracts/${contractId}/documents`,
+        {
+          method: "POST",
+          body: form,
+          headers: await auth.getHeaders(),
+        },
+      );
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        const detail = body?.detail;
+        throw new ApiError(res.status, typeof detail === "object" ? detail.message : detail);
+      }
+      return body as Schemas["ContractDetail"];
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId] }),
+  });
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Sparkles, Trash2 } from "lucide-react";
+import { Download, Plus, Sparkles, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -18,6 +18,7 @@ import {
   Select,
 } from "@/components/ui";
 import {
+  useAiEnabled,
   useDownload,
   useOrgMembers,
   useRemoveWorkspaceMember,
@@ -81,6 +82,7 @@ export default function WorkspacePage() {
   const setMember = useSetWorkspaceMember(orgId, workspaceId);
   const remove = useRemoveWorkspaceMember(orgId, workspaceId);
   const download = useDownload(orgId);
+  const aiEnabled = useAiEnabled();
 
   if (workspace.isPending) return <Loading />;
   if (workspace.error) return <ErrorText>{errorMessage(workspace.error)}</ErrorText>;
@@ -110,12 +112,22 @@ export default function WorkspacePage() {
             >
               <Download className="size-4" /> Excel
             </Button>
-            <Link
-              href={`/app/${orgId}/workspaces/${workspaceId}/chat`}
-              className="bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium hover:opacity-90"
-            >
-              <Sparkles className="size-4" /> Ask AI
-            </Link>
+            {aiEnabled && (
+              <Link
+                href={`/app/${orgId}/workspaces/${workspaceId}/chat`}
+                className="border-border bg-surface hover:bg-background inline-flex h-9 items-center gap-2 rounded-md border px-4 text-sm font-medium"
+              >
+                <Sparkles className="size-4" /> Ask AI
+              </Link>
+            )}
+            {(ws.my_role === "admin" || ws.my_role === "editor") && (
+              <Link
+                href={`/app/${orgId}/workspaces/${workspaceId}/contracts/new`}
+                className="bg-primary text-primary-foreground inline-flex h-9 items-center gap-2 rounded-md px-4 text-sm font-medium hover:opacity-90"
+              >
+                <Plus className="size-4" /> New contract
+              </Link>
+            )}
           </div>
         }
       />

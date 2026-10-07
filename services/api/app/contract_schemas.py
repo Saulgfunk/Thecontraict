@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models import (
     ContractStatus,
@@ -25,6 +25,7 @@ from app.schemas import ORMModel, _check_country
 
 class DocumentOut(ORMModel):
     id: uuid.UUID
+    ai_status: str | None
     filename: str
     mime_type: str
     size_bytes: int
@@ -259,3 +260,43 @@ class ContractUpdate(BaseModel):
     @classmethod
     def _upper(cls, v: str | None) -> str | None:
         return v.upper() if v else v
+
+
+class ContractCreate(BaseModel):
+    """A contract entered by hand."""
+
+    title: str = Field(min_length=1, max_length=500)
+    counterparty_name: str | None = Field(default=None, max_length=500)
+    contract_type: str | None = Field(default=None, max_length=100)
+    effective_date: date | None = None
+    end_date: date | None = None
+    initial_term_amount: int | None = Field(default=None, ge=1, le=1200)
+    initial_term_unit: PeriodUnit | None = None
+    auto_renews: bool | None = None
+    renewal_term_amount: int | None = Field(default=None, ge=1, le=1200)
+    renewal_term_unit: PeriodUnit | None = None
+    governing_law: str | None = Field(default=None, max_length=200)
+    holiday_country: str | None = None
+    holiday_subdivision: str | None = Field(default=None, max_length=10)
+    currency: str | None = Field(default=None, min_length=3, max_length=3)
+    contract_value: Decimal | None = None
+    notice_details: str | None = None
+    owner_id: uuid.UUID | None = None
+    date_rules: list[DateRuleIn] = Field(default=[], max_length=50)
+    payment_terms: list[PaymentTermIn] = Field(default=[], max_length=50)
+
+    _country = field_validator("holiday_country")(_check_country)
+
+    @field_validator("currency")
+    @classmethod
+    def _upper(cls, v: str | None) -> str | None:
+        return v.upper() if v else v
+
+    @model_validator(mode="after")
+    def _periods_complete(self) -> "ContractCreate":
+        for prefix in ("initial_term", "renewal_term"):
+            amount = getattr(self, f"{prefix}_amount")
+            unit = getattr(self, f"{prefix}_unit")
+            if (amount is None) != (unit is None):
+                raise ValueError(f"{prefix.replace('_', ' ')}: give both a number and a unit")
+        return self

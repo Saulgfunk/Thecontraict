@@ -5,6 +5,7 @@ from datetime import date
 import pytest
 from sqlalchemy import func, select
 
+from app.config import get_settings
 from app.db import SessionLocal, set_tenant
 from app.models import Contract, ExtractionRun
 from app.pipeline import extract as ext
@@ -17,8 +18,10 @@ DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 @pytest.fixture
 def fake(monkeypatch: pytest.MonkeyPatch) -> Iterator[FakeExtractor]:
+    """AI switched on, with a deterministic stand-in for Claude."""
     extractor = FakeExtractor()
     monkeypatch.setattr(ext, "get_extractor", lambda: extractor)
+    monkeypatch.setattr(get_settings(), "anthropic_api_key", "test-key")
     yield extractor
 
 
@@ -233,8 +236,9 @@ def test_permissions_and_validation(
     bob = client_as(BOB)
     assert upload(bob, org_id, ws_id, msa_docx()).status_code == 403
 
-    contract_id = upload(alice, org_id, ws_id, msa_docx()).json()["id"]
-    assert upload(alice, org_id, ws_id, msa_docx()).status_code == 409  # duplicate
+    original = msa_docx()
+    contract_id = upload(alice, org_id, ws_id, original).json()["id"]
+    assert upload(alice, org_id, ws_id, original).status_code == 409  # duplicate
     assert upload(alice, org_id, ws_id, b"hello", "notes.txt").status_code == 415
 
     # Viewer can read but not edit.
@@ -263,16 +267,49 @@ def test_permissions_and_validation(
     assert alice.get(f"/organizations/{org_id}/contracts/{contract_id}").status_code == 404
 
 
-def test_extraction_failure_is_reported(client_as: Client, setup: tuple[str, str]) -> None:
+def test_upload_without_ai_keeps_document_and_clauses(
+    client_as: Client, setup: tuple[str, str]
+) -> None:
     org_id, ws_id = setup
     alice = client_as(ALICE)
-    # No fake extractor and no API key configured.
-    ext.get_extractor.cache_clear()
+    assert alice.get("/config").json() == {"ai_enabled": False}
     contract_id = upload(alice, org_id, ws_id, msa_docx()).json()["id"]
     detail = alice.get(f"/organizations/{org_id}/contracts/{contract_id}").json()
     document = detail["documents"][0]
-    assert document["status"] == "failed"
-    assert "ANTHROPIC_API_KEY" in document["error"]
+    assert (document["status"], document["ai_status"], document["error"]) == (
+        "ready",
+        "skipped",
+        None,
+    )
+    assert detail["status"] == "needs_review"  # the user enters the terms
+    assert detail["deadlines"] == [] and detail["date_rules"] == []
+    clauses = alice.get(f"/organizations/{org_id}/documents/{document['id']}/clauses").json()
+    assert any(c["number"] == "2.2" for c in clauses)
+
+    # Scanned PDFs can't be read without AI, but the file is kept.
+    scan = upload(alice, org_id, ws_id, blank_pdf(), "scan.pdf").json()
+    doc = alice.get(f"/organizations/{org_id}/contracts/{scan['id']}").json()["documents"][0]
+    assert (doc["status"], doc["ai_status"], doc["text_source"]) == (
+        "ready",
+        "skipped",
+        "needs_ocr",
+    )
+
+
+def test_ai_errors_are_reported(
+    client_as: Client, setup: tuple[str, str], fake: FakeExtractor, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    org_id, ws_id = setup
+
+    def boom(xml: str, context: str) -> None:
+        raise ext.ExtractionError("The AI model declined to process this document")
+
+    monkeypatch.setattr(fake, "extract", boom)
+    contract_id = upload(client_as(ALICE), org_id, ws_id, msa_docx()).json()["id"]
+    detail = client_as(ALICE).get(f"/organizations/{org_id}/contracts/{contract_id}").json()
+    document = detail["documents"][0]
+    assert (document["status"], document["ai_status"]) == ("failed", "failed")
+    assert document["error"] == "The AI model declined to process this document"
     assert detail["status"] == "needs_review"
 
 

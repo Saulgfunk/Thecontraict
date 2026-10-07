@@ -361,6 +361,8 @@ class Document(WorkspaceScopedMixin, Base):
     error: Mapped[str | None] = mapped_column(Text)
     page_count: Mapped[int | None] = mapped_column(Integer)
     text_source: Mapped[str | None] = mapped_column(String(20))  # "text_layer" | "ocr" | "docx"
+    # "analysed" | "skipped" (AI not configured) | "failed"; null until processed.
+    ai_status: Mapped[str | None] = mapped_column(String(20))
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     contract: Mapped[Contract] = relationship(back_populates="documents")
