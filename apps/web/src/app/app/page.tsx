@@ -5,7 +5,8 @@ import { useEffect } from "react";
 
 import { CreateOrganization } from "@/components/app/create-organization";
 import { Logo } from "@/components/app/logo";
-import { ErrorText, Loading } from "@/components/ui";
+import { Waiting } from "@/components/app/waiting";
+import { ErrorText } from "@/components/ui";
 import { useMe } from "@/lib/api";
 import { useAuthState } from "@/lib/auth";
 import { LAST_ORG_KEY } from "@/lib/config";
@@ -30,7 +31,7 @@ export default function AppHome() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
       {me.isPending || orgs?.length ? (
-        <Loading />
+        <Waiting />
       ) : me.error ? (
         <ErrorText>Could not reach the API: {errorMessage(me.error)}</ErrorText>
       ) : (

@@ -4,10 +4,10 @@ import { SignIn } from "@clerk/nextjs";
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { Logo } from "@/components/app/logo";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field, Input, Loading } from "@/components/ui";
 import { setDevEmail, useAuthState } from "@/lib/auth";
 import { AUTH_MODE } from "@/lib/config";
 
@@ -86,7 +86,14 @@ export default function SignInPage() {
         <Link href="/" className="lg:hidden">
           <Logo />
         </Link>
-        {AUTH_MODE === "clerk" ? <SignIn forceRedirectUrl="/app" /> : <DevSignIn />}
+        {AUTH_MODE === "clerk" ? (
+          // Clerk reads the URL, which Next.js only allows inside a Suspense boundary.
+          <Suspense fallback={<Loading />}>
+            <SignIn forceRedirectUrl="/app" />
+          </Suspense>
+        ) : (
+          <DevSignIn />
+        )}
       </section>
     </main>
   );

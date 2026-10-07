@@ -1,0 +1,39 @@
+# Render Blueprint for the API (https://render.com/docs/blueprint-spec).
+# In Render: New → Blueprint → pick this repository. It asks for the values marked
+# "sync: false"; see docs/deploy.md for where each one comes from.
+services:
+  - type: web
+    name: thecontraict-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: services/api
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: ./services/api
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_MODE
+        value: clerk
+      # Free hosts have no lasting disk: keep uploaded files in the database.
+      - key: STORAGE_BACKEND
+        value: database
+      # No background worker on the free plan: process uploads in the API itself.
+      - key: TASKS_EAGER
+        value: "true"
+      - key: EMAIL_BACKEND
+        value: console
+      # The scheduler (GitHub Actions) sends this to run reminders and digests.
+      - key: CRON_SECRET
+        generateValue: true
+      # Neon connection string (the direct one, not "pooled").
+      - key: DATABASE_URL
+        sync: false
+      # Clerk → Configure → API keys → "Frontend API URL", e.g. https://xxx.clerk.accounts.dev
+      - key: CLERK_ISSUER
+        sync: false
+      # The website's address on Vercel, e.g. https://thecontraict.vercel.app
+      - key: APP_URL
+        sync: false

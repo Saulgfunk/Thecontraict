@@ -7,7 +7,8 @@ import { useEffect } from "react";
 
 import { Logo } from "@/components/app/logo";
 import { NotificationBell } from "@/components/app/notification-bell";
-import { ErrorText, Loading, Select } from "@/components/ui";
+import { Waiting } from "@/components/app/waiting";
+import { ErrorText, Select } from "@/components/ui";
 import { useMe } from "@/lib/api";
 import { useAuthState } from "@/lib/auth";
 import { LAST_ORG_KEY } from "@/lib/config";
@@ -30,7 +31,7 @@ export function AppShell({ orgId, children }: { orgId: string; children: React.R
   if (me.isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Loading />
+        <Waiting />
       </div>
     );
   }

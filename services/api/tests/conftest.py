@@ -15,18 +15,22 @@ from collections.abc import Callable, Iterator  # noqa: E402
 import pytest  # noqa: E402
 from alembic.config import Config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+from sqlalchemy import create_engine, text  # noqa: E402
+from sqlalchemy.pool import NullPool  # noqa: E402
 
 from alembic import command  # noqa: E402
-from app.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = (
     "chat_messages, chat_threads, notifications, reminder_logs, calendar_feeds, "
     "deadlines, payment_terms, date_rules, extraction_runs, clauses, documents, contracts, "
     "audit_events, workspace_memberships, workspaces, organization_memberships, "
-    "organizations, users"
+    "organizations, users, stored_files"
 )
+
+# The app's engine switches to the restricted role, which may not TRUNCATE: clean up as
+# the login user (the table owner).
+owner_engine = create_engine(os.environ["DATABASE_URL"], poolclass=NullPool)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -40,7 +44,7 @@ def _migrate() -> None:
 @pytest.fixture(autouse=True)
 def _clean_db() -> Iterator[None]:
     yield
-    with engine.begin() as conn:
+    with owner_engine.begin() as conn:
         conn.execute(text(f"TRUNCATE {TABLES} CASCADE"))
 
 

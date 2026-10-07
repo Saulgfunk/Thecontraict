@@ -1,4 +1,5 @@
-"""Document file storage: local disk for development, S3-compatible in production."""
+"""Document file storage: local disk for development, S3-compatible or Postgres in
+production."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -66,9 +67,53 @@ class S3Storage:
         self.client.delete_object(Bucket=self.bucket, Key=key)
 
 
+class DatabaseStorage:
+    """Files in the ``stored_files`` table. Fine for a small deployment (the free tier of a
+    hosted Postgres holds a few thousand contracts); move to S3 when it grows."""
+
+    def put(self, key: str, data: bytes, content_type: str) -> None:
+        from sqlalchemy.dialects.postgresql import insert
+
+        from app.db import SessionLocal
+        from app.models import StoredFile
+
+        with SessionLocal() as db:
+            db.execute(
+                insert(StoredFile)
+                .values(key=key, content_type=content_type, data=data)
+                .on_conflict_do_update(
+                    index_elements=[StoredFile.key],
+                    set_={"content_type": content_type, "data": data},
+                )
+            )
+            db.commit()
+
+    def get(self, key: str) -> bytes:
+        from app.db import SessionLocal
+        from app.models import StoredFile
+
+        with SessionLocal() as db:
+            row = db.get(StoredFile, key)
+            if row is None:
+                raise FileNotFoundError(key)
+            return row.data
+
+    def delete(self, key: str) -> None:
+        from sqlalchemy import delete
+
+        from app.db import SessionLocal
+        from app.models import StoredFile
+
+        with SessionLocal() as db:
+            db.execute(delete(StoredFile).where(StoredFile.key == key))
+            db.commit()
+
+
 @lru_cache
 def get_storage() -> Storage:
     settings = get_settings()
     if settings.storage_backend == "s3":
         return S3Storage()
+    if settings.storage_backend == "database":
+        return DatabaseStorage()
     return LocalStorage(settings.local_storage_dir)

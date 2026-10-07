@@ -13,11 +13,13 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    LargeBinary,
     Numeric,
     String,
     Text,
     UniqueConstraint,
     Uuid,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
@@ -723,3 +725,15 @@ class AmendmentChange(Base):
     label: Mapped[str] = mapped_column(String(300))  # human description of the target
     old_value: Mapped[Any] = mapped_column(JSONB)
     new_value: Mapped[Any] = mapped_column(JSONB)
+
+
+class StoredFile(Base):
+    """Document bytes when ``STORAGE_BACKEND=database`` (deployments without object storage).
+    Not tenant-scoped itself: rows are only reached through a document's storage key."""
+
+    __tablename__ = "stored_files"
+
+    key: Mapped[str] = mapped_column(String(1000), primary_key=True)
+    content_type: Mapped[str] = mapped_column(String(200))
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

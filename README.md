@@ -15,6 +15,7 @@ about your contract portfolio.
 | [docs/architecture.md](docs/architecture.md) | Proposed tech stack and system design |
 | [docs/data-model.md](docs/data-model.md)     | Core entities and relationships       |
 | [docs/roadmap.md](docs/roadmap.md)           | Phased delivery plan                  |
+| [docs/deploy.md](docs/deploy.md)             | Putting it online on free plans       |
 
 ## Repository layout
 

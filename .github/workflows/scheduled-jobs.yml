@@ -1,0 +1,35 @@
+# Runs reminders hourly and the weekly digest on Mondays by calling the API, for hosts
+# without a background worker (e.g. Render's free plan). Set up in docs/deploy.md:
+#   Variable API_URL  - the API's public address, e.g. https://thecontraict-api.onrender.com
+#   Secret CRON_SECRET - the CRON_SECRET value from the API's environment
+# GitHub runs schedules from the default branch only.
+name: Scheduled jobs
+
+on:
+  schedule:
+    - cron: "7 * * * *" # every hour: reminders
+    - cron: "37 6 * * 1" # Monday morning (UTC): weekly digest
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Job to run
+        type: choice
+        options: [reminders, digests]
+        default: reminders
+
+jobs:
+  run:
+    if: vars.API_URL != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call the API
+        env:
+          API_URL: ${{ vars.API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          JOB: ${{ inputs.job || (github.event.schedule == '37 6 * * 1' && 'digests') || 'reminders' }}
+        run: |
+          # A sleeping free instance takes up to a minute to wake: allow for it and retry.
+          curl --fail-with-body --silent --show-error --max-time 180 \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            -X POST -H "X-Cron-Secret: ${CRON_SECRET}" "${API_URL%/}/internal/jobs/${JOB}"

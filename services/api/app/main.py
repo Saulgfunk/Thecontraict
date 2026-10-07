@@ -10,6 +10,7 @@ from app.routers import (
     contracts,
     deadlines,
     documents_out,
+    internal,
     notifications,
     organizations,
     workspaces,
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(notifications.router)
     app.include_router(chat.router)
     app.include_router(documents_out.router)
+    app.include_router(internal.router)
 
     @app.get("/config", tags=["system"])
     def public_config() -> dict[str, bool]:
